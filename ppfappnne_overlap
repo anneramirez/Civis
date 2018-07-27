@@ -1,0 +1,7 @@
+SELECT * 
+FROM vansync.ppfa_emailsubscriptions_mym p, vansync.ppfa_emailsubscriptions_mym n
+where p.emailsubscriptionid <> n.emailsubscriptionid
+and p.email = n.email
+and n.committeeid = '19915'
+and p.committeeid = '11607'
+order by p.email
