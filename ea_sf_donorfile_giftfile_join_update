@@ -61,3 +61,4 @@ gift.classification_value as CLASSIFICATION_VALUE
  inner join anneramirez.ea_sf_donorfile donor using (vanid)
  left join anneramirez.ea_sf_countrycodes ct on ct.ea_countrycode=donor.countrycode
  WHERE gift.contactscontributionid NOT IN (SELECT DISTINCT alt_transaction_id FROM anneramirez.ea_sf_file_master)
+ and gift.contactscontributionid NOT IN (SELECT DISTINCT contactscontributionid FROM anneramirez.ea_sf_exceptions)
