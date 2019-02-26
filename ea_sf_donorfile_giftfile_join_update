@@ -1,0 +1,63 @@
+insert into anneramirez.ea_sf_file_master
+SELECT 
+gift.datereceived::date+1 as filedate,
+gift.filetype as filetype,
+ null AS account_id,
+ gift.vanid AS alternate_id,
+ donor.title as title,
+ donor.firstname as firstname,
+ donor.middlename as middlename,
+ donor.lastname as lastname,
+ donor.suffix as suffix,
+ gift.occupationname as occupation_code,
+ gift.employername as employer,
+ (case when donor.addressline1 IS NOT NULL THEN 'H' ELSE null END) as address_type,
+ donor.addressline1 as address_line,
+ donor.addressline2 as address_extra_line1,
+ donor.city as city,
+ donor.state_province as state,
+ donor.zip_postal as zip,
+ donor.zip4 as zip_extension,
+ct.sf_countrycode as country,
+ donor.email as email_address,
+ donor.phone as telephone_number,
+ donor.phonetypeid as telephone_type,
+gift.creditaccount as credit_account,
+gift.affiliateid as station_support,
+gift.contactscontributionid AS alt_transaction_id,
+gift.notes AS comments,
+date_part(year, gift.datereceived) || (
+	CASE 
+		WHEN date_part(month, gift.datereceived) < '10'
+			THEN '0'::TEXT || (date_part(month, gift.datereceived)::TEXT)
+		ELSE date_part(month, gift.datereceived)::TEXT
+		END
+	) || (
+	CASE 
+		WHEN date_part(day, gift.datereceived) < '10'
+			THEN '0'::TEXT || (date_part(day, gift.datereceived)::TEXT)
+		ELSE date_part(day, gift.datereceived)::TEXT
+		END
+	) AS gift_date,
+gift.amount::numeric(19,2) as gift_amount,
+gift.contactsrecurringcontributionid as pledge_number,
+gift.marketsource as source_code,
+(case when gift.paymenttypename='PayPal' then 'Paypal'
+ else gift.paymenttypename end) as payment_method, 
+gift.contributionhonoreetypename as memorial_type,
+gift.honoreename AS tribute_name,
+NULL AS NOTIFY,
+gift.notification_first_last AS NOTIFY_FREE_NAME,
+gift.notificationaddress AS NOTIFY_ADDRESS_LINE,
+gift.notificationcity AS NOTIFY_CITY,
+gift.notificationstateprovince AS NOTIFY_STATE,
+gift.notificationzippostalcode AS NOTIFY_ZIP,
+gift.notificationcountrycode AS NOTIFY_COUNTRY,
+gift.notificationmessage AS TRIBUTE_COMMENTS,
+gift.classification_code as CLASSIFICATION_CODE, 
+gift.classification_value as CLASSIFICATION_VALUE
+ FROM 
+ anneramirez.ea_sf_giftfile gift
+ inner join anneramirez.ea_sf_donorfile donor using (vanid)
+ left join anneramirez.ea_sf_countrycodes ct on ct.ea_countrycode=donor.countrycode
+ WHERE gift.contactscontributionid NOT IN (SELECT DISTINCT alt_transaction_id FROM anneramirez.ea_sf_file_master)
