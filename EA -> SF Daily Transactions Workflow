@@ -1,0 +1,29 @@
+version: '2.0'
+workflow:
+  tasks:
+    ea_sf_giftfileupdate_21168896:
+      action: civis.run_job
+      retry:
+        count: 1
+        delay: 120
+      input:
+        job_id: 21168896
+      on-success:
+        - ea_sf_donorgiftjoin_update_22000635
+    ea_sf_donorfileupdate_21841466:
+      action: civis.run_job
+      retry:
+        count: 1
+        delay: 120
+      input:
+        job_id: 21841466
+      on-success:
+        - ea_sf_donorgiftjoin_update_22000635
+    ea_sf_donorgiftjoin_update_22000635:
+      action: civis.run_job
+      retry:
+        count: 1
+        delay: 120
+      input:
+        job_id: 22000635
+      join: all
