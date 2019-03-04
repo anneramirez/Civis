@@ -1,0 +1,384 @@
+create temp table giftfile_update (like anneramirez.ea_sf_giftfile);
+
+insert into giftfile_update
+SELECT
+	/* join to contacts piece */
+	cont.vanid
+	,
+	/* does not go to SF */
+	comm.committeename
+	,
+  /* does not go to SF */
+	cont.committeeid
+	,
+  /* does not go to SF */
+	cont.onlineformname
+	,
+	/* does not go to SF -- match to id on donor file? */
+	cont.contactsonlineformid
+	,
+	/* occupation for PAC/Votes gifts */
+	cont.occupationname,
+	
+	/* occupation for PAC/Votes gifts */
+	cont.employername,
+
+	/*insert date*/ 
+CONVERT_TIMEZONE('US/Eastern', getdate()) AS insertdate
+	,
+	/* file type */
+	(
+		CASE 
+			WHEN cont.financialprogramid IN ( 
+					1
+					,83
+					,143
+					,145
+					)
+				THEN 'ppfa.ea_C3_PPFA_'
+			WHEN cont.financialprogramid IN (
+					7
+					,84
+					,144
+					,146
+					)
+				THEN 'ppfa.ea_C4_PPAF_'
+			WHEN cont.financialprogramid IN (
+					82
+					,148
+					)
+				THEN 'ppfa.ea_PAC_'
+			WHEN cont.financialprogramid IN (
+					77
+					,147
+					)
+				THEN 'ppfa.ea_VOTES_'
+			ELSE cont.financialprogramid::text --will probably pull in as null but use for troubleshooting?
+			END
+		) AS filetype
+	,
+	/* financialprogramid translation
+1	Planned Parenthood Federation of America	
+83	Planned Parenthood Federation of America - C3
+145	PPFA Direct Mail C3
+146	PPFA Direct Mail C4
+147	High Touch Votes
+144	High Touch C4
+148	High Touch PAC
+143	High Touch C3	
+84	Planned Parenthood Action Fund - C4
+7	Action Fund C4
+82  Planned Parenthood Federal PAC
+77  PP Votes
+*/
+
+	/* credit account */ 
+	/* Could we use campaigns for this? Assign a campaign to the form, set campaign to credit account? I guess we could also just use a custom drop-down field but ugh */
+	/* All national c4 (excluding High Touch and Direct Mail) gifts are assigned the same credit account. National c3 gifts are assigned one of three different codes depending on: directed vs nondirected; directed to national; directed to global */
+	(
+		CASE 
+			WHEN cont.committeeid = 9816
+				THEN 'C440100UR422ONL'
+			WHEN cont.committeeid = 11607
+				THEN (
+						CASE 
+							WHEN (
+									cont.onlineformname iLIKE '%\\_DIRECTED\\_%'
+									OR right(cont.marketsource, 1) = 'D'
+									)
+								THEN 
+									(
+										CASE 
+											WHEN cont.affiliateid = '010000'
+												THEN 'C340105UR422ONL' --gifts directed to national
+											WHEN cont.affiliateid = '011000'
+												THEN 'C340100TR422GOP' --gifts directed to global
+											ELSE 'C325015'
+											END
+										) --gifts directed to any affiliate
+							ELSE 'C340100UR422ONL'
+							END
+						)
+			WHEN cont.committeeid IN (
+					72219
+					,72220
+					)
+				THEN (
+						CASE 
+							WHEN cont.creditaccount IS NOT NULL THEN cont.creditaccount
+							when cont.creditaccount is null then (
+								case when cont.financialprogramid = 145 then 'C340015UR422RSO' /*it might be a better idea to use a static table to hold all the different possible HT/DM values*/
+								when cont.financialprogramid = 146 then 'C440015UR422RSO'
+								when cont.financialprogramid = 143 then 'C340015UR422MLS'
+								when cont.financialprogramid = 144 then 'C440015UR422MLS'
+								else null end)
+							else null end) 
+			ELSE NULL
+			END
+		) AS creditaccount
+	,
+	/* station support */ 
+	/*pull in directed gift ids from ms subquery, use custom fields for home affiliate code. but also maybe try to wait until the affiliate id custom table updates before triggering this script*/
+(case when cont.onlineformname iLIKE '%\\_DIRECTED\\_%' OR right(cont.marketsource, 1) = 'D' then cont.affiliateid 
+ when cont.onlineformname not iLIKE '%\\_DIRECTED\\_%' AND right(cont.marketsource, 1) <> 'D' then
+ (case when coalesce(cont.affiliateid, ccf.affiliatecode) is not null then coalesce(cont.affiliateid, '0'||left(ccf.affiliatecode,5))
+ else '999999' end) else null end) as affiliateid
+  ,
+	/* alt transaction id (acquired batch sequence in SF) */
+	cont.contactscontributionid
+	,
+	/* gift date */ 
+	cont.datereceived
+	,
+	/* gift amount */
+	cont.amount
+	,
+	/* pledge number - tentatively pull in cont.contactsrecurringcontributionid */
+	cont.contactsrecurringcontributionid
+	,
+	/* source code */
+	(
+		CASE 
+			WHEN cont.financialprogramid IN (
+					1
+					,83
+					)
+				AND left(cont.marketsource, 1) <> '3'
+				THEN '3'
+			WHEN cont.financialprogramid IN (
+					7
+					,84
+					)
+				AND left(cont.marketsource, 1) <> '4'
+				THEN '4'
+			else left(cont.marketsource, 1)
+		END
+	||right(left(cont.marketsource,4),3)||
+		(case
+			WHEN lower(right(left(cont.marketsource, 5), 1)) = 'z'
+				THEN (
+						CASE 
+							WHEN cont.contactsrecurringcontributionid IS NOT NULL
+								THEN 'W'
+							WHEN trib.contributionhonoreetypename IS NOT NULL
+								THEN 'T'
+							ELSE 'D'
+						END
+					) || right(cont.marketsource,len(cont.marketsource)-5)
+			ELSE right(cont.marketsource,len(cont.marketsource)-4)
+		END)
+	) AS marketsource
+	,
+	/* payment method */
+	pt.paymenttypename
+	,
+	/* comments */
+	cont.notes
+	,
+	/* tribute information */
+	trib.contributionhonoreetypename
+	,trib.honoreename
+	,trib.notificationfirstname || ' ' || trib.notificationlastname as notification_first_last
+	,trib.notificationaddress
+	,trib.notificationcity
+	,trib.notificationstateprovince
+	,trib.notificationzippostalcode
+	,trib.notificationcountrycode
+	,trib.notificationmessage
+	,
+	/* set sustainer preference */
+	(
+		CASE 
+			WHEN cont.contactsrecurringcontributionid IS NOT NULL
+				THEN 'SUST'
+			ELSE NULL
+			END
+		) AS pref_code_1
+	,(
+		CASE 
+			WHEN cont.contactsrecurringcontributionid IS NOT NULL
+				AND cont.financialprogramid::text IN (
+					1
+					,83
+					,143
+					,145
+					)
+				THEN 'C3 ONLINE'
+			WHEN cont.contactsrecurringcontributionid IS NOT NULL
+				AND cont.financialprogramid::text IN (
+					7
+					,84
+					,144
+					,146
+					)
+				THEN 'C4 ONLINE'
+			ELSE NULL
+			END
+		) AS pref_code_2
+/* **** SOURCE TABLES **** */
+/* big boy */
+FROM (
+	SELECT gifts.vanid
+		,gifts.committeeid
+		,gifts.contactscontributionid
+		,gifts.contactsrecurringcontributionid
+		,gifts.financialprogramid
+		,gifts.contactsonlineformid
+		,gifts.paymenttypeid
+		,gifts.datereceived
+		,gifts.amount
+		,gifts.notes
+		,gifts.occupationname
+		,gifts.employername
+		,gifts.creditaccount
+		,(
+			CASE 
+				WHEN gifts.marketsource IS NOT NULL
+					THEN gifts.marketsource
+				WHEN gifts.marketsource IS NULL
+					AND gifts.financialprogramid IN (
+						1
+						,83
+						,143
+						,145
+						)
+					THEN '3NALz1900W1N1N' 
+						/*Not sure how to configure defaults for HT and DM. Could base on form name? Or possibly set up additional gateways for PC and the rest of HT? For now setting to ONL defaults*/ 
+						/* At first might be best to set default to trigger exception flag so i can review */
+				WHEN gifts.marketsource IS NULL
+					AND gifts.financialprogramid IN (
+						7
+						,84
+						,144
+						,146
+						)
+					THEN '4NALz1900W1N1A'
+				ELSE NULL
+				END
+			) AS marketsource
+			,gifts.affiliateid
+		,gifts.onlineformname
+		,gifts.onlineformresponsename
+	FROM (
+		SELECT contr.vanid
+			,contr.committeeid
+			,contr.contactscontributionid
+			,contr.contactsrecurringcontributionid
+			,contr.contactsonlineformid
+			,contr.financialprogramid
+			,contr.paymenttypeid
+			,contr.datereceived
+			,contr.amount
+			,contr.notes
+			,contr.occupationname
+			,contr.employername
+			,contr.creditaccount
+			,coalesce(contr.market_source, forms.marketsource) AS marketsource
+			,coalesce(contr.affiliateid, forms.onlineformresponsename) AS affiliateid
+			,forms.onlineformname
+			,forms.onlineformresponsename
+		FROM (
+			SELECT cc.vanid
+				,cc.contactscontributionid
+				,cc.financialprogramid
+				,cc.committeeid
+				,cc.datereceived
+				,cc.amount
+				,cc.notes
+				,cc.occupationname
+				,cc.employername
+				,crc.contactsrecurringcontributionid
+				,msc.market_source
+				,cu.affiliateid
+				,cu.creditaccount
+				,coalesce(crc.contactsonlineformid, cc.contactsonlineformid) AS contactsonlineformid
+				,coalesce(crc.defaultpaymenttypeid, cc.paymenttypeid) AS paymenttypeid
+			FROM vansync.ppfa_contactscontributions_mym cc
+			LEFT JOIN vansync.ppfa_contactsrecurringcontributions_mym crc using (contactsrecurringcontributionid)
+			LEFT JOIN anneramirez.marketsource_correction msc ON msc.recurring_commitment_id = crc.
+				contactsrecurringcontributionid --hopefully temporary until we get this field fixed
+			LEFT JOIN vansync.ppfa_customfields cu ON cc.contactscontributionid = cu.contactscontributionid
+			WHERE cc.contributionstatusid NOT IN ('4')
+				AND cc.datecanceled IS NULL
+     		and cc.createdby <> '1469016'
+				AND cc.committeeid IN (
+					11607
+					,9816
+					,72219
+					,72220
+					,68255
+					,65351 --PPVotes, replace when new data share committee is created
+					) 
+			) contr
+		LEFT JOIN (
+			SELECT cof.contactsonlineformid
+				,cof.marketsource
+				,olf.onlineformname
+				,dir.onlineformresponsename
+			FROM vansync.ppfa_contactsonlineforms_mym cof
+			LEFT JOIN vansync.ppfa_onlineforms_mym olf USING (onlineformid)
+			LEFT JOIN (
+				SELECT cr.contactsonlineformid
+					,fr.onlineformresponsename
+				FROM vansync.ppfa_contactsonlineformsresponses_single_mym cr
+				INNER JOIN vansync.ppfa_onlineformquestions fq USING (onlineformquestionid)
+				INNER JOIN vansync.ppfa_onlineformresponses fr USING (onlineformresponseid)
+				WHERE fq.onlineformquestionid IN (
+						2046
+						,1693
+						) 
+					--drop-down fields on directed forms NOTE YOU MUST ADD NEW IDS WHEN NEW DIRECTED FORMS ARE CREATED /*anne maybe set an alert or something if there's a new directed form?*/
+				) dir ON dir.contactsonlineformid = cof.contactsonlineformid
+			) forms ON forms.contactsonlineformid = contr.contactsonlineformid
+		) gifts
+	) cont
+/* affiliate code custom contact field */ 
+left join vansync.ppfa_contactscustomfields_mym ccf on cont.vanid=ccf.vanid  
+/* committee name */
+LEFT JOIN vansync.ppfa_committees comm ON comm.committeeid = cont.committeeid
+/* payment type */
+LEFT JOIN vansync.ppfa_paymenttypes pt ON cont.paymenttypeid = pt.paymenttypeid
+/* IHO/IMO details */
+LEFT JOIN (
+	SELECT ch.contactscontributionid
+		,ch.honoreename
+		,ch.notificationfirstname
+		,ch.notificationlastname
+		,ch.notificationaddress
+		,ch.notificationcity
+		,ch.notificationstateprovince
+		,ch.notificationzippostalcode
+		,ch.notificationcountrycode
+		,ch.notificationmessage
+		,cht.contributionhonoreetypename
+	FROM vansync.ppfa_contactscontributionshonorees_mym ch
+	INNER JOIN vansync.ppfa_contributionhonoreetypes cht using (contributionhonoreetypeid)
+	) trib ON cont.contactscontributionid = trib.contactscontributionid
+/*FILTERS*/
+WHERE cont.committeeid IN (
+		11607
+		,9816
+		,72219
+		,72220
+		,68255
+		,65351 --PPVotes, replace when new data share committee is created
+		)
+	AND cont.datereceived::date >= '2018-07-01'
+  and cont.datereceived::date < current_date;
+  
+begin transaction;
+
+/* remove newly updated exceptions */
+delete from anneramirez.ea_sf_giftfile
+using giftfile_update 
+where ea_sf_giftfile.contactscontributionid=giftfile_update.contactscontributionid
+and giftfile_update.contactscontributionid in (select distinct contactscontributionid from anneramirez.ea_sf_exceptions);
+
+/* insert new and updated rows */
+insert into anneramirez.ea_sf_giftfile
+select * from giftfile_update gfu
+where gfu.contactscontributionid not in (select distinct contactscontributionid from anneramirez.ea_sf_giftfile);
+
+end transaction;
+
+drop table giftfile_update;
