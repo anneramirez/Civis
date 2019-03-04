@@ -3,29 +3,28 @@ create table anneramirez.ea_sf_file_master as
 SELECT 
 gift.datereceived::date+1 as filedate,
 gift.filetype as filetype,
- null AS account_id,
  gift.vanid AS alternate_id,
- donor.title as title,
- donor.firstname as firstname,
- donor.middlename as middlename,
- donor.lastname as lastname,
+ donor.title as salutation,
+ donor.firstname as first_name,
+ donor.middlename as middle_name,
+ donor.lastname as last_name,
  donor.suffix as suffix,
- gift.occupationname as occupation_code,
- gift.employername as employer,
+ gift.occupationname as occupation,
+ gift.employername as employer_name,
  (case when donor.addressline1 IS NOT NULL THEN 'H' ELSE null END) as address_type,
- donor.addressline1 as address_line,
- donor.addressline2 as address_extra_line1,
- donor.city as city,
- donor.state_province as state,
- donor.zip_postal as zip,
- donor.zip4 as zip_extension,
-ct.sf_countrycode as country,
- donor.email as email_address,
- donor.phone as telephone_number,
- donor.phonetypeid as telephone_type,
-gift.creditaccount as credit_account,
-gift.affiliateid as station_support,
-gift.contactscontributionid AS alt_transaction_id,
+ donor.addressline1 as address_street_line_1,
+ donor.addressline2 as address_street_line_2,
+ donor.city as address_city,
+ donor.state_province as address_state,
+ donor.zip_postal as address_postal_code,
+ donor.zip4 as address_zip_plus_4,
+ct.sf_countrycode as address_country,
+ donor.email as email,
+ donor.phone as phone_1,
+ donor.phonetypeid as phone_type,
+gift.creditaccount as gau_credit_code,
+gift.affiliateid as affiliate_number,
+gift.contactscontributionid AS batch_upload_sequence_number,
 gift.notes AS comments,
 date_part(year, gift.datereceived) || (
 	CASE 
@@ -39,26 +38,30 @@ date_part(year, gift.datereceived) || (
 			THEN '0'::TEXT || (date_part(day, gift.datereceived)::TEXT)
 		ELSE date_part(day, gift.datereceived)::TEXT
 		END
-	) AS gift_date,
-gift.amount::numeric(19,2) as gift_amount,
-gift.contactsrecurringcontributionid as pledge_number,
-gift.marketsource as source_code,
+	) AS close_date,
+gift.amount::numeric(19,2) as giving_amount,
+gift.contactsrecurringcontributionid as recurring_id,
+gift.marketsource as campaign_source,
 (case when gift.paymenttypename='PayPal' then 'Paypal'
  else gift.paymenttypename end) as payment_method, 
-gift.contributionhonoreetypename as memorial_type,
+gift.contributionhonoreetypename as tribute_type,
 gift.honoreename AS tribute_name,
-NULL AS NOTIFY,
+NULL AS tribute_delivery,
 gift.notification_first_last AS NOTIFY_FREE_NAME,
 gift.notificationaddress AS NOTIFY_ADDRESS_LINE,
 gift.notificationcity AS NOTIFY_CITY,
 gift.notificationstateprovince AS NOTIFY_STATE,
 gift.notificationzippostalcode AS NOTIFY_ZIP,
 gift.notificationcountrycode AS NOTIFY_COUNTRY,
-gift.notificationmessage AS TRIBUTE_COMMENTS,
-gift.classification_code as CLASSIFICATION_CODE, 
-gift.classification_value as CLASSIFICATION_VALUE
+gift.notificationmessage AS tribute_description,
+gift.pref_code_1 as pref_code_1, 
+gift.pref_code_2 as pref_code_2
  FROM 
  anneramirez.ea_sf_giftfile gift
  inner join anneramirez.ea_sf_donorfile donor using (vanid)
  left join anneramirez.ea_sf_countrycodes ct on ct.ea_countrycode=donor.countrycode
- /*WHERE gift.contactscontributionid NOT IN (SELECT DISTINCT alt_transaction_id FROM anneramirez.ea_sf_file_master)*/
+where 
+gift.marketsource IS not NULL
+and gift.affiliateid is not null
+and gift.creditaccount IS not NULL
+and gift.paymenttypename in ('Visa','Discover','American Express','MasterCard','PayPal')
