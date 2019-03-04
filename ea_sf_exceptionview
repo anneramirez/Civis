@@ -1,0 +1,34 @@
+create or replace view anneramirez.ea_sf_exceptions as
+select 
+cont.*, 
+(case when cont.marketsource IS NULL then 'marketsource'
+ when (cont.committeeid = 11607	AND (cont.onlineformname iLIKE '%\\_DIRECTED\\_%' OR right(cont.marketsource, 1) = 'D')	AND cont.affiliateid IS NULL) then 'affiliateid'
+ when (cont.committeeid IN (72219,72220) AND cont.creditaccount IS NULL) then 'creditaccount'
+ when (cont.contactscontributionid in (select cca.contactscontributionid from vansync.ppfa_contactscontributionsadjustments_mym cca
+inner join vansync.ppfa_contactscontributions_mym cc using (contactscontributionid) where cc.datereceived::date=cca.dateadjusted::date and cc.amount - cca.adjustmentamount = 0)) then 'refunded'
+ when (date_part(month, cont.datereceived) not in (datepart(month, current_date), datepart(month, ADD_MONTHS(current_date, -1)))) then 'closedmonth'
+ when (date_part(month, cont.datereceived) = datepart(month, ADD_MONTHS(current_date, -1) and datepart(day,current_date) > 5)) then 'lastmonth'
+ when cont.paymenttypename not in ('Visa','Discover','American Express','MasterCard','PayPal') then 'paymenttype'
+ else null end) as exception_reason
+from anneramirez.ea_sf_giftfile cont
+	where (cont.marketsource IS NULL
+	or (cont.committeeid = 11607
+				AND (
+					cont.onlineformname iLIKE '%\\_DIRECTED\\_%'
+					OR right(cont.marketsource, 1) = 'D'
+					)
+				AND cont.affiliateid IS NULL)
+	or (cont.committeeid IN (
+					72219
+					,72220
+					)
+				AND cont.creditaccount IS NULL)
+	or (date_part(month, cont.datereceived) not in (datepart(month, current_date), datepart(month, ADD_MONTHS(current_date, -1))))
+  or (date_part(month, cont.datereceived) = datepart(month, ADD_MONTHS(current_date, -1)
+			and datepart(day,current_date) > 5))
+	or (cont.contactscontributionid in (select cca.contactscontributionid from vansync.ppfa_contactscontributionsadjustments_mym cca
+			inner join vansync.ppfa_contactscontributions_mym cc using (contactscontributionid)
+			where cc.datereceived::date=cca.dateadjusted::date
+			and cc.amount - cca.adjustmentamount = 0))
+  or (cont.paymenttypename not in ('Visa','Discover','American Express','MasterCard','PayPal')))
+and cont.contactscontributionid not in (select alt_transaction_id from anneramirez.ea_sf_file_master);
