@@ -1,0 +1,89 @@
+create temp table donorfile_update (like anneramirez.ea_sf_donorfile);
+
+insert into anneramirez.donorfile_update
+SELECT 
+null as accountid,
+c.vanid,
+c.title, 
+c.firstname,
+c.middlename,
+c.lastname,
+c.suffix,
+(case when coalesce(addr.addressline1,addr.vaddress) IS NOT NULL THEN 'H' ELSE null END) as address_type,
+coalesce(addr.addressline1,addr.vaddress) as addressline1,
+(case when addr.addressline1 IS NOT NULL THEN addr.addressline2 else null end) as addressline2,
+addr.city,
+coalesce(addr.state,addr.provincename) as state_province, --maybe change this to case when based on country?
+coalesce(addr.zip5,addr.postalcode) as zip_postal,
+addr.zip4,
+addr.countrycode,
+em.email,
+ph.phone,
+ph.phonetypeid 
+ 
+/* *** SOURCE TABLES *** */
+FROM 
+vansync.ppfa_contacts_mym_cont c
+left join vansync.ppfa_contactsonlineforms_mym olf
+using (vanid)
+LEFT JOIN (SELECT DISTINCT
+             *
+             FROM (SELECT
+               *,
+               RANK ()
+               OVER (PARTITION BY vanid ORDER BY datemodified DESC, coalesce(addressline1,vaddress) desc, random()) as rank
+               FROM vansync.ppfa_contactsaddresses_mym
+			   where 
+			   coalesce(addressline1,vaddress) is not null
+			   and city is not null
+			   and coalesce(state,provincename) is not null
+			   and coalesce(zip5,postalcode) is not null
+         and countrycode is not null
+			   ) a
+             WHERE rank='1'
+           ) addr --if any address field is null pulling in, don't send anything (unless new record); might have to pull new record info from gift file, not sure where else to get from
+USING (vanid)
+LEFT JOIN (SELECT DISTINCT
+             *
+             FROM (SELECT
+               *,
+               RANK ()
+               OVER (PARTITION BY vanid ORDER BY datemodified DESC, datecreated desc, random()) as rank
+               FROM vansync.ppfa_contactsemails_mym
+			   where datesuppressed is null) a
+             WHERE rank='1'
+           ) em
+USING (vanid)
+LEFT JOIN (SELECT DISTINCT
+             *
+             FROM (SELECT
+               *,
+               RANK ()
+               OVER (PARTITION BY vanid ORDER BY datemodified DESC, random()) as rank
+               FROM vansync.ppfa_contactsphones_mym
+			   where datesuppressed is null
+			   and phonetypeid='H') a
+             WHERE rank='1'
+           ) ph
+USING (vanid)
+where c.vanid in (select distinct vanid from vansync.ppfa_contactscontributions_mym where committeeid in (11607,9816,72219,72220,68255,65351))
+and ((c.datemodified::date=current_date-1) OR (addr.datemodified::date=current_date-1) OR (em.datemodified::date=current_date-1) OR (ph.datemodified::date=current_date-1))
+;
+
+/* remove old outdated rows */
+begin transaction;
+
+delete from anneramirez.ea_sf_donorfile
+using donorfile_update 
+where ea_sf_donorfile.vanid=donorfile_update.vanid
+and ea_sf_donorfile.addressline1<>donorfile_update.addressline1
+and donorfile_update.addressline1 is not null; 
+
+/* insert new and updated rows */
+insert into anneramirez.ea_sf_donorfile
+select * from donorfile_update dfu
+where dfu.vanid not in (select vanid from anneramirez.ea_sf_donorfile);
+
+end transaction;
+
+drop table donorfile_update;
