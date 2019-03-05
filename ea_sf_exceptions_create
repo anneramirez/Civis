@@ -1,29 +1,24 @@
 drop table anneramirez.ea_sf_exceptions;
 create table anneramirez.ea_sf_exceptions as
 select 
+null as exception_date,
+donor.email,
 cont.*, 
-(case when cont.marketsource IS NULL then 'marketsource'
- when (cont.committeeid = 11607	AND (cont.onlineformname iLIKE '%\\_DIRECTED\\_%' OR right(cont.marketsource, 1) = 'D')	AND cont.affiliateid IS NULL) then 'affiliateid'
- when (cont.committeeid IN (72219,72220) AND cont.creditaccount IS NULL) then 'creditaccount'
- when (cont.contactscontributionid in (select cca.contactscontributionid from vansync.ppfa_contactscontributionsadjustments_mym cca
-inner join vansync.ppfa_contactscontributions_mym cc using (contactscontributionid) where cc.datereceived::date=cca.dateadjusted::date and cc.amount - cca.adjustmentamount = 0)) then 'refunded'
- when (date_part(month, cont.datereceived) not in (datepart(month, current_date), datepart(month, ADD_MONTHS(current_date, -1)))) then 'closedmonth'
- when (datepart(day,current_date) > 5 AND (date_part(month, cont.datereceived) = datepart(month, ADD_MONTHS(current_date, -1)))) then 'lastmonth'
+(case 
+ when donor.email like '%ppfa.org' then 'likelytest' /*OMG create a script to look for test accounts, add to a table, then cross reference!*/
+ when (cont.contactscontributionid in (select cca.contactscontributionid from vansync.ppfa_contactscontributionsadjustments_mym cca inner join vansync.ppfa_contactscontributions_mym cc using (contactscontributionid) where cc.datereceived::date=cca.dateadjusted::date and cc.amount - cca.adjustmentamount = 0)) then 'refunded'
+ when cont.marketsource IS NULL then 'marketsource'
+ when cont.creditaccount IS NULL then 'creditaccount'
  when cont.paymenttypename not in ('Visa','Discover','American Express','MasterCard','PayPal') then 'paymenttype'
+ when cont.filetype = 'ppfa.ea_C3_PPFA_' and cont.affiliateid IS NULL then 'affiliateid'
+ when (datepart(day,current_date) > 5 AND (date_part(month, cont.datereceived) = datepart(month, ADD_MONTHS(current_date, -1)))) then 'lastmonth'
+ when (date_part(month, cont.datereceived) not in (datepart(month, current_date), datepart(month, ADD_MONTHS(current_date, -1)))) then 'closedmonth'
  else null end) as exception_reason
 from anneramirez.ea_sf_giftfile cont
+left join anneramirez.ea_sf_donorfile donor using (vanid)
 	where (cont.marketsource IS NULL
-	or (cont.committeeid = 11607
-				AND (
-					cont.onlineformname iLIKE '%\\_DIRECTED\\_%'
-					OR right(cont.marketsource, 1) = 'D'
-					)
-				AND cont.affiliateid IS NULL)
-	or (cont.committeeid IN (
-					72219
-					,72220
-					)
-				AND cont.creditaccount IS NULL)
+	or (cont.filetype = 'ppfa.ea_C3_PPFA_' AND cont.affiliateid IS NULL)
+	or (cont.creditaccount IS NULL)
 	or (date_part(month, cont.datereceived) not in (datepart(month, current_date), datepart(month, ADD_MONTHS(current_date, -1))))
   or ((date_part(month, cont.datereceived) = datepart(month, ADD_MONTHS(current_date, -1)))
 			and datepart(day,current_date) > 5)
