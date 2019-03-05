@@ -1,7 +1,7 @@
 drop table anneramirez.ea_sf_exceptions;
 create table anneramirez.ea_sf_exceptions as
 select 
-null as exception_date,
+current_date as exception_date,
 donor.email,
 cont.*, 
 (case 
