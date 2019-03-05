@@ -9,7 +9,7 @@ cont.*,
  when (cont.contactscontributionid in (select cca.contactscontributionid from vansync.ppfa_contactscontributionsadjustments_mym cca inner join vansync.ppfa_contactscontributions_mym cc using (contactscontributionid) where cc.datereceived::date=cca.dateadjusted::date and cc.amount - cca.adjustmentamount = 0)) then 'refunded'
  when cont.marketsource IS NULL then 'marketsource'
  when cont.creditaccount IS NULL then 'creditaccount'
- when cont.paymenttypename not in ('Visa','Discover','American Express','MasterCard','PayPal') then 'paymenttype'
+ when (cont.paymenttypename is null OR cont.paymenttypename not in ('Visa','Discover','American Express','MasterCard','PayPal')) then 'paymenttype'
  when cont.filetype = 'ppfa.ea_C3_PPFA_' and cont.affiliateid IS NULL then 'affiliateid'
  when (datepart(day,current_date) > 5 AND (date_part(month, cont.datereceived) = datepart(month, ADD_MONTHS(current_date, -1)))) then 'lastmonth'
  when (date_part(month, cont.datereceived) not in (datepart(month, current_date), datepart(month, ADD_MONTHS(current_date, -1)))) then 'closedmonth'
@@ -26,5 +26,5 @@ left join anneramirez.ea_sf_donorfile donor using (vanid)
 			inner join vansync.ppfa_contactscontributions_mym cc using (contactscontributionid)
 			where cc.datereceived::date=cca.dateadjusted::date
 			and cc.amount - cca.adjustmentamount = 0))
-  or (cont.paymenttypename not in ('Visa','Discover','American Express','MasterCard','PayPal')))
+  or (cont.paymenttypename is null OR cont.paymenttypename not in ('Visa','Discover','American Express','MasterCard','PayPal')))
 and cont.contactscontributionid not in (select batch_upload_sequence_number from anneramirez.ea_sf_file_master);
