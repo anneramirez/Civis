@@ -62,6 +62,6 @@ gift.pref_code_2 as pref_code_2
  left join anneramirez.ea_sf_countrycodes ct on ct.ea_countrycode=donor.countrycode
 where 
 gift.marketsource IS not NULL
-and gift.affiliateid is not null
+and ((gift.filetype = 'ppfa.ea_C3_PPFA_' AND gift.affiliateid IS not NULL) OR gift.filetype <> 'ppfa.ea_C3_PPFA_')
 and gift.creditaccount IS not NULL
 and gift.paymenttypename in ('Visa','Discover','American Express','MasterCard','PayPal')
