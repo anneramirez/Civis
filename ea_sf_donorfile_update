@@ -2,7 +2,6 @@ create temp table donorfile_update (like anneramirez.ea_sf_donorfile);
 
 insert into anneramirez.donorfile_update
 SELECT 
-null as accountid,
 c.vanid,
 c.title, 
 c.firstname,
@@ -12,7 +11,7 @@ c.suffix,
 (case when coalesce(addr.addressline1,addr.vaddress) IS NOT NULL THEN 'H' ELSE null END) as address_type,
 coalesce(addr.addressline1,addr.vaddress) as addressline1,
 (case when addr.addressline1 IS NOT NULL THEN addr.addressline2 else null end) as addressline2,
-addr.city,
+addr.city as city,
 coalesce(addr.state,addr.provincename) as state_province, --maybe change this to case when based on country?
 coalesce(addr.zip5,addr.postalcode) as zip_postal,
 addr.zip4,
@@ -24,8 +23,6 @@ ph.phonetypeid
 /* *** SOURCE TABLES *** */
 FROM 
 vansync.ppfa_contacts_mym_cont c
-left join vansync.ppfa_contactsonlineforms_mym olf
-using (vanid)
 LEFT JOIN (SELECT DISTINCT
              *
              FROM (SELECT
@@ -33,12 +30,12 @@ LEFT JOIN (SELECT DISTINCT
                RANK ()
                OVER (PARTITION BY vanid ORDER BY datemodified DESC, coalesce(addressline1,vaddress) desc, random()) as rank
                FROM vansync.ppfa_contactsaddresses_mym
-			   where 
-			   coalesce(addressline1,vaddress) is not null
+			   where coalesce(addressline1,vaddress) is not null
 			   and city is not null
 			   and coalesce(state,provincename) is not null
 			   and coalesce(zip5,postalcode) is not null
          and countrycode is not null
+         and datesuppressed is null
 			   ) a
              WHERE rank='1'
            ) addr --if any address field is null pulling in, don't send anything (unless new record); might have to pull new record info from gift file, not sure where else to get from
