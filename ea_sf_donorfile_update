@@ -1,6 +1,6 @@
 create temp table donorfile_update (like anneramirez.ea_sf_donorfile);
 
-insert into anneramirez.donorfile_update
+insert into donorfile_update
 SELECT 
 c.vanid,
 c.title, 
