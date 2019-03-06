@@ -9,7 +9,7 @@ workflow:
       input:
         job_id: 21168896
       on-success:
-        - ea_sf_donorgiftjoin_update_22000635
+        - ea_sf_exceptions_update_22210012
     ea_sf_donorfileupdate_21841466:
       action: civis.run_job
       retry:
@@ -17,6 +17,16 @@ workflow:
         delay: 120
       input:
         job_id: 21841466
+      on-success:
+        - ea_sf_exceptions_update_22210012
+    ea_sf_exceptions_update_22210012:
+      action: civis.run_job
+      retry:
+        count: 1
+        delay: 120
+      input:
+        job_id: 22210012
+      join: all
       on-success:
         - ea_sf_donorgiftjoin_update_22000635
     ea_sf_donorgiftjoin_update_22000635:
@@ -26,4 +36,9 @@ workflow:
         delay: 120
       input:
         job_id: 22000635
-      join: all
+      on-success:
+        - Daily_File_Export___ea_C3_PPFA_22006132
+    Daily_File_Export___ea_C3_PPFA_22006132:
+      action: civis.run_job
+      input:
+        job_id: 22006132
