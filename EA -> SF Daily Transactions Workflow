@@ -37,8 +37,31 @@ workflow:
       input:
         job_id: 22000635
       on-success:
+        - Update_Counts_22349322
+    Update_Counts_22349322:
+      action: civis.run_job
+      retry:
+        count: 1
+        delay: 120
+      input:
+        job_id: 22349322
+      on-success:
+        - Daily_File_Export_ea_C4_PPAF_22351589
         - Daily_File_Export___ea_C3_PPFA_22006132
     Daily_File_Export___ea_C3_PPFA_22006132:
       action: civis.run_job
       input:
         job_id: 22006132
+      on-success:
+        - ea_sf_dailyfile_email_22030941
+    Daily_File_Export_ea_C4_PPAF_22351589:
+      action: civis.run_job
+      input:
+        job_id: 22351589
+      on-success:
+        - ea_sf_dailyfile_email_22030941
+    ea_sf_dailyfile_email_22030941:
+      action: civis.run_job
+      input:
+        job_id: 22030941
+      join: all
