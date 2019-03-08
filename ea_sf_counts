@@ -1,0 +1,33 @@
+insert into anneramirez.ea_sf_counts 
+select
+'ea_c3_ppfa' as filetype,
+'ppfa.ea_C3_PPFA_'||to_char(current_date,'YYYYMMDD') as filename,
+count(distinct batch_upload_sequence_number) as totaltransactions,
+count(distinct alternate_id) as totaldonors,
+sum(giving_amount) as totaldonated
+from anneramirez.ea_c3_ppfa
+UNION
+select
+'ea_c4_ppaf' as filetype,
+'ppfa.ea_C4_PPAF_'||to_char(current_date,'YYYYMMDD') as filename,
+count(distinct batch_upload_sequence_number) as totaltransactions,
+count(distinct alternate_id) as totaldonors,
+sum(giving_amount) as totaldonated
+from anneramirez.ea_c4_ppaf
+UNION
+select
+'ea_pac' as filetype,
+'ppfa.ea_PAC_'||to_char(current_date,'YYYYMMDD') as filename,
+count(distinct batch_upload_sequence_number) as totaltransactions,
+count(distinct alternate_id) as totaldonors,
+sum(giving_amount) as totaldonated
+from anneramirez.ea_pac
+UNION
+select
+'ea_votes' as filetype,
+'ppfa.ea_VOTES_'||to_char(current_date,'YYYYMMDD') as filename,
+count(distinct batch_upload_sequence_number) as totaltransactions,
+count(distinct alternate_id) as totaldonors,
+sum(giving_amount) as totaldonated
+from anneramirez.ea_votes
+order by filename desc
