@@ -1,0 +1,18 @@
+log('running pac count')
+var countpac = query("select totaltransactions from anneramirez.ea_sf_counts where filename='ppfa.ea_PAC_'||to_char(current_date,'YYYYMMDD')")
+if (countpac[0].totaltransactions == 0) {
+  log('found zero transactions')
+} else {
+  log('found ' + countpac[0].totaltransactions + ' transactions')
+  log("New PAC Gift(s)!  Run Daily File Export Job (Job ID - 22355106)")
+  var a = civis.api.call("post","/scripts/custom/22355106/run")
+};
+log('running votes count')
+var countc3 = query("select totaltransactions from anneramirez.ea_sf_counts where filename='ppfa.ea_VOTES_'||to_char(current_date,'YYYYMMDD')")
+if (countc3[0].totaltransactions == 0) {
+  log('found zero transactions')
+} else {
+  log('found ' + countc3[0].totaltransactions + ' transactions')
+  log("New Votes Gift(s)!  Run Daily File Export Job (Job ID - 22355130)")
+  var a = civis.api.call("post","/scripts/custom/22355130/runs")
+};
