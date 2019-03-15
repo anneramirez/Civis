@@ -15,7 +15,12 @@ var queryString = 'select ' +
 'order by exception_reason asc' ;
 
 var results = query(queryString);
+
+if (results.length==0){
+var mdTable = 'No new exceptions.'
+} else {
 var mdTable = toMarkdownTable(results);
+  };
 
 function toMarkdownTable(data) {
     var table = '|'
