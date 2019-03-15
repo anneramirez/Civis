@@ -1,0 +1,35 @@
+var queryString = 'select ' +
+'exception_date,  ' +
+'email,  ' +
+'vanid,  ' +
+'committeeid,  ' +
+'creditaccount,  ' +
+'affiliateid,  ' +
+'datereceived,  ' +
+'amount,  ' +
+'marketsource,  ' +
+'paymenttypename,  ' +
+'exception_reason  ' +
+'from anneramirez.ea_sf_exceptions  ' +
+'where exception_date=current_date ' +
+'order by exception_reason asc' ;
+
+var results = query(queryString);
+var mdTable = toMarkdownTable(results);
+
+function toMarkdownTable(data) {
+    var table = '|'
+    var headers = Object.keys(data[0])
+    var underHeaders = ''
+    headers.map(function(key) {
+        table += key + '|'
+        underHeaders += ' ------ |'
+    })
+
+    table += '\n|' + underHeaders + '\n'
+    data.map(function(row) {
+      var values = headers.map(function(h) { return row[h] })
+      table += '|' + values.join('|') + '|\n'
+    })
+    return table
+}
