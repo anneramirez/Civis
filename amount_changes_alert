@@ -1,0 +1,32 @@
+var queryString = 'select *  ' +
+'from vansync.ppfa_contactscontributions_mym cc  ' +
+'left join anneramirez.ea_sf_giftfile ea using(contactscontributionid)  ' +
+'where (cc.amount<>cc.settlementamount ' +
+'or cc.amount<>cc.processedamount ' +
+'or cc.amount<>ea.amount) ' +
+'and cc.contributiondatemodified::date=current_date-1' ;
+
+var results = query(queryString);
+
+if (results.length==0){
+var mdTable = 'Nothing new to report.'
+} else {
+var mdTable = toMarkdownTable(results);
+  };
+
+function toMarkdownTable(data) {
+    var table = '|'
+    var headers = Object.keys(data[0])
+    var underHeaders = ''
+    headers.map(function(key) {
+        table += key + '|'
+        underHeaders += ' ------ |'
+    })
+
+    table += '\n|' + underHeaders + '\n'
+    data.map(function(row) {
+      var values = headers.map(function(h) { return row[h] })
+      table += '|' + values.join('|') + '|\n'
+    })
+    return table
+}
