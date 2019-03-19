@@ -34,6 +34,7 @@ CONVERT_TIMEZONE('US/Eastern', getdate()) AS insertdate
 					,83
 					,143
 					,145
+        ,78  --PMG - remove once sustainers are migrated
 					)
 				THEN 'ppfa.ea_C3_PPFA_'
 			WHEN cont.financialprogramid IN (
@@ -53,7 +54,7 @@ CONVERT_TIMEZONE('US/Eastern', getdate()) AS insertdate
 					,147
 					)
 				THEN 'ppfa.ea_VOTES_'
-			ELSE cont.financialprogramid::text --will probably pull in as null but use for troubleshooting?
+			ELSE cont.financialprogramid::text 
 			END
 		) AS filetype
 	,
@@ -70,6 +71,7 @@ CONVERT_TIMEZONE('US/Eastern', getdate()) AS insertdate
 7	Action Fund C4
 82  Planned Parenthood Federal PAC
 77  PP Votes
+78 PPFA PMG
 */
 
 	/* credit account */ 
@@ -203,6 +205,7 @@ CONVERT_TIMEZONE('US/Eastern', getdate()) AS insertdate
 					,83
 					,143
 					,145
+          ,78 --PMG - remove once sustainers are migrated
 					)
 				THEN 'C3 ONLINE'
 			WHEN cont.contactsrecurringcontributionid IS NOT NULL
@@ -309,6 +312,7 @@ FROM (
 					,72220
 					,68255
 					,65351 --PPVotes, replace when new data share committee is created
+          ,65401 --PMG - remove once sustainers are migrated
 					) 
 			) contr
 		LEFT JOIN (
@@ -363,6 +367,7 @@ WHERE cont.committeeid IN (
 		,72220
 		,68255
 		,65351 --PPVotes, replace when new data share committee is created
+  ,65401 --PMG - remove once sustainers are migrated
 		)
 	AND cont.datereceived::date >= '2018-07-01'
   and cont.datereceived::date < current_date;
