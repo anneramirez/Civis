@@ -23,14 +23,26 @@ ph.phonetypeid
 /* *** SOURCE TABLES *** */
 FROM 
 vansync.ppfa_contacts_mym_cont c
+inner JOIN (SELECT DISTINCT
+             *
+             FROM (SELECT
+               *,
+               RANK ()
+               OVER (PARTITION BY vanid ORDER BY datecreated DESC, random()) as rank
+               FROM vansync.ppfa_contactscontributions_mym
+			   			where committeeid in (11607,9816,72219,72220,68255,65351,65401)) a
+             WHERE rank='1'
+           ) cc
+USING (vanid)
 LEFT JOIN (SELECT DISTINCT
              *
              FROM (SELECT
                *,
                RANK ()
-               OVER (PARTITION BY vanid ORDER BY datemodified DESC, coalesce(addressline1,vaddress) desc, random()) as rank
+               OVER (PARTITION BY vanid ORDER BY datemodified DESC, coalesce(vaddress,addressline1) desc, random()) as rank
                FROM vansync.ppfa_contactsaddresses_mym
-			   where coalesce(addressline1,vaddress) is not null
+			   where coalesce(vaddress,addressline1) is not null
+         and length(coalesce(vaddress,addressline1))>0
 			   and city is not null
 			   and coalesce(state,provincename) is not null
 			   and coalesce(zip5,postalcode) is not null
@@ -63,8 +75,7 @@ LEFT JOIN (SELECT DISTINCT
              WHERE rank='1'
            ) ph
 USING (vanid)
-where c.vanid in (select distinct vanid from vansync.ppfa_contactscontributions_mym where committeeid in (11607,9816,72219,72220,68255,65351))
-and ((c.datemodified::date=current_date-1) OR (addr.datemodified::date=current_date-1) OR (em.datemodified::date=current_date-1) OR (ph.datemodified::date=current_date-1))
+where ((cc.datecreated::date=current_date-1) OR (c.datemodified::date=current_date-1) OR (addr.datemodified::date=current_date-1) OR (em.datemodified::date=current_date-1) OR (ph.datemodified::date=current_date-1))
 ;
 
 /* remove old outdated rows */
