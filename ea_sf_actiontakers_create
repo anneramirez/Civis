@@ -1,0 +1,90 @@
+drop table anneramirez.ea_sf_actiontakers;
+create table anneramirez.ea_sf_actiontakers as
+SELECT 
+c.vanid,
+c.title, 
+c.firstname,
+c.middlename,
+c.lastname,
+c.suffix,
+(case when coalesce(addr.addressline1,addr.vaddress) IS NOT NULL THEN 'H' ELSE null END) as address_type,
+coalesce(addr.addressline1,addr.vaddress) as addressline1,
+(case when addr.addressline1 IS NOT NULL THEN addr.addressline2 else null end) as addressline2,
+addr.city,
+coalesce(addr.state,addr.provincename) as state_province, 
+coalesce(addr.zip5,addr.postalcode) as zip_postal,
+addr.zip4,
+addr.countrycode,
+em.email,
+ph.phone,
+ph.phonetypeid,
+cof.datecreated as action_date,
+cof.contactsonlineformid as transaction_id,
+onf.onlineformname,
+oft.onlineformtypename as action_type,
+cmp.campaignname as campaign,
+res.onlineformresponsename, 
+codes.codename as source,
+--translate codename into channel: use parentcodeid? pull channel part of code? just use market source instead?
+(case when codes.parentcodeid = 1000036 then 'C3 EMAIL'
+ when codes.parentcodeid = 1000037 then 'C3 WEB'
+ when codes.parentcodeid = 1004179 then 'C3 AD'
+ when codes.parentcodeid = 1004296 then 'C3 MOBILE'
+ when codes.parentcodeid = 1004250 then 'C4 EMAIL'
+ when codes.parentcodeid = 1000067 then 'C4 WEB'
+ when codes.parentcodeid = 1004183 then 'C4 AD'
+ when codes.parentcodeid = 1004625 then 'C4 MOBILE'
+ else null end) as channel
+
+/* *** SOURCE TABLES *** */
+FROM vansync.ppfa_contactsonlineforms_mym cof
+inner join vansync.ppfa_onlineforms_mym onf on cof.onlineformid=onf.onlineformid
+left join vansync.ppfa_onlineformtypes oft on onf.onlineformtypeid=oft.onlineformtypeid
+left join vansync.ppfa_campaigns cmp on onf.campaignid=cmp.campaignid
+left join (select * from 
+           vansync.ppfa_contactsonlineformsresponses_single_mym cfr 
+					 inner join vansync.ppfa_onlineformquestions ofq on cfr.onlineformquestionid=ofq.onlineformquestionid
+					 inner join vansync.ppfa_onlineformresponses ofr on cfr.onlineformresponseid=ofr.onlineformresponseid 
+           where ofq.surveyquestionid = 203938) res on cof.contactsonlineformid=res.contactsonlineformid 
+left join (select ofc.*, cod.codename, cod.parentcodeid from vansync.ppfa_contactsonlineformscodes_mym ofc 
+           inner join vansync.ppfa_codes_mym cod on ofc.codeid=cod.codeid) codes on cof.contactsonlineformid=codes.contactsonlineformid
+inner join vansync.ppfa_contacts_mym_cont c on cof.vanid=c.vanid
+LEFT JOIN (SELECT DISTINCT
+             *
+             FROM (SELECT
+               *,
+               RANK ()
+               OVER (PARTITION BY vanid ORDER BY datemodified DESC, coalesce(vaddress,addressline1) desc, random()) as rank
+               FROM vansync.ppfa_contactsaddresses_mym
+			   where coalesce(vaddress,addressline1) is not null
+         and length(coalesce(vaddress,addressline1))>3
+			   ) a
+             WHERE rank='1'
+           ) addr 
+on cof.vanid=addr.vanid
+LEFT JOIN (SELECT DISTINCT
+             *
+             FROM (SELECT
+               *,
+               RANK ()
+               OVER (PARTITION BY vanid ORDER BY preferredemail desc, datemodified DESC, datecreated desc, random()) as rank
+               FROM vansync.ppfa_contactsemails_mym
+			   where datesuppressed is null) a
+             WHERE rank='1'
+           ) em
+on cof.vanid=em.vanid
+LEFT JOIN (SELECT DISTINCT
+             *
+             FROM (SELECT
+               *,
+               RANK ()
+               OVER (PARTITION BY vanid ORDER BY datemodified DESC, random()) as rank
+               FROM vansync.ppfa_contactsphones_mym
+			   where datesuppressed is null
+			   and phonetypeid='H') a
+             WHERE rank='1'
+           ) ph
+on cof.vanid=ph.vanid
+where onf.committeeid in (11607, 9816)
+and onf.onlineformtypeid in (1,4,5)
+and cof.datecreated::date >= 2019-03-01
