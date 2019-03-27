@@ -104,6 +104,7 @@ CONVERT_TIMEZONE('US/Eastern', getdate()) AS insertdate
 			WHEN cont.committeeid IN (
 					72219
 					,72220
+        ,65401
 					)
 				THEN (
 						CASE 
@@ -122,8 +123,9 @@ CONVERT_TIMEZONE('US/Eastern', getdate()) AS insertdate
 	/* station support */ 
 	/*pull in directed gift ids from ms subquery, use custom fields for home affiliate code. but also maybe try to wait until the affiliate id custom table updates before triggering this script*/
 (case when cont.onlineformname iLIKE '%\\_DIRECTED\\_%' OR right(cont.marketsource, 1) = 'D' then cont.affiliateid 
- when right(cont.marketsource, 1) <> 'D' then
+ when cont.onlineformname not iLIKE '%\\_DIRECTED\\_%' AND right(cont.marketsource, 1) <> 'D' then
  (case when coalesce(cont.affiliateid, ccf.affiliatecode) is not null then coalesce(cont.affiliateid, '0'||left(ccf.affiliatecode,5))
+  when cont.financialprogramid not in (1,83,143,145,78) then null
  else '999999' end) 
  else null end) as affiliateid
   ,
