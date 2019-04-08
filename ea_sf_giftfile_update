@@ -101,33 +101,28 @@ CONVERT_TIMEZONE('US/Eastern', getdate()) AS insertdate
 							ELSE 'C340100UR422ONL'
 							END
 						)
-			WHEN cont.committeeid IN (
-					72219
-					,72220
-        ,65401
-					)
-				THEN (
-						CASE 
-							WHEN cont.creditaccount IS NOT NULL THEN cont.creditaccount
-							when cont.creditaccount is null then (
-								case when cont.financialprogramid = 145 then 'C340015UR422RSO' /*it might be a better idea to use a static table to hold all the different possible HT/DM values*/
+			WHEN cont.creditaccount IS NOT NULL THEN cont.creditaccount
+			when cont.creditaccount is null then (
+					 case when cont.financialprogramid = 145 then 'C340015UR422RSO' /*it might be a better idea to use a static table to hold all the different possible HT/DM values*/
 								when cont.financialprogramid = 146 then 'C440015UR422RSO'
 								when cont.financialprogramid = 143 then 'C340015UR422MLS'
 								when cont.financialprogramid = 144 then 'C440015UR422MLS'
-								else null end)
-							else null end) 
+                when cont.financialprogramid in (82,148) then 'PC40225TR480PMG'
+                when cont.financialprogramid in (77,147) then 'PV40225TR480PMG'
+								else null end) 
 			ELSE NULL
 			END
 		) AS creditaccount
 	,
 	/* station support */ 
-	/*pull in directed gift ids from ms subquery, use custom fields for home affiliate code. but also maybe try to wait until the affiliate id custom table updates before triggering this script*/
-(case when cont.onlineformname iLIKE '%\\_DIRECTED\\_%' OR right(cont.marketsource, 1) = 'D' then cont.affiliateid 
- when cont.onlineformname not iLIKE '%\\_DIRECTED\\_%' AND right(cont.marketsource, 1) <> 'D' then
+	/*pull in directed gift ids from ms subquery, use custom fields for home affiliate code. */
+(case when cont.financialprogramid IN (1,83,143,145) then
+ (case when cont.onlineformname iLIKE '%\\_DIRECTED\\_%' OR right(cont.marketsource, 1) = 'D' then cont.affiliateid 
+ when right(cont.marketsource, 1) <> 'D' then
  (case when coalesce(cont.affiliateid, ccf.affiliatecode) is not null then coalesce(cont.affiliateid, '0'||left(ccf.affiliatecode,5))
-  when cont.financialprogramid not in (1,83,143,145,78) then null
  else '999999' end) 
- else null end) as affiliateid
+ else null end)
+else null end) as affiliateid
   ,
 	/* alt transaction id (acquired batch sequence in SF) */
 	cont.contactscontributionid
@@ -241,24 +236,24 @@ FROM (
 			CASE 
 				WHEN gifts.marketsource IS NOT NULL
 					THEN gifts.marketsource
-				WHEN gifts.marketsource IS NULL
-					AND gifts.financialprogramid IN (
+				WHEN gifts.marketsource IS NULL then
+					(case when gifts.financialprogramid IN (
 						1
 						,83
-						,143
-						,145
 						)
-					THEN '3NALz1900W1N1N' 
-						/*Not sure how to configure defaults for HT and DM. Could base on form name? Or possibly set up additional gateways for PC and the rest of HT? For now setting to ONL defaults*/ 
-						/* At first might be best to set default to trigger exception flag so i can review */
-				WHEN gifts.marketsource IS NULL
-					AND gifts.financialprogramid IN (
+					THEN '3NALz1900W1N1N' /*PPFA 11607*/
+         when gifts.financialprogramid IN (
 						7
 						,84
-						,144
-						,146
 						)
-					THEN '4NALz1900W1N1A'
+					THEN '4NALz1900W1N1A' /*PPAF 9816*/
+          when gifts.financialprogramid = 143 then '3NADD1900W1N07' /*High Touch C3*/
+					when gifts.financialprogramid = 144 then '4NADD1900W1N07' /*High Touch C4*/
+          when gifts.financialprogramid = 145 then '3NALA1900W2NMT' /*Direct Mail C3*/
+					when gifts.financialprogramid = 146 then '4NALA1900W1NMT' /*Direct Mail C4*/
+          when gifts.financialprogramid in (82,148) then '5NAM51900W1NMG' /*High Touch PAC*/ /*Using as default for now*/
+          when gifts.financialprogramid in (77,147) then '4NVMD1900W1NMG' /*High Touch Votes*/ /*Using as default for now*/
+           else null end)
 				ELSE NULL
 				END
 			) AS marketsource
@@ -372,7 +367,7 @@ WHERE cont.committeeid IN (
   ,65401 --PMG - remove once sustainers are migrated
 		)
 	AND cont.datereceived::date >= '2018-07-01'
-  and cont.datereceived::date < current_date;
+  and cont.datereceived::date < CONVERT_TIMEZONE('US/Eastern', getdate());
   
 begin transaction;
 
