@@ -46,7 +46,6 @@ LEFT JOIN (SELECT DISTINCT
 			   and city is not null
 			   and coalesce(state,provincename) is not null
 			   and coalesce(zip5,postalcode) is not null
-         and countrycode is not null
          and datesuppressed is null
 			   ) a
              WHERE rank='1'
@@ -57,7 +56,7 @@ LEFT JOIN (SELECT DISTINCT
              FROM (SELECT
                *,
                RANK ()
-               OVER (PARTITION BY vanid ORDER BY datemodified DESC, datecreated desc, random()) as rank
+               OVER (PARTITION BY vanid ORDER BY preferredemail desc, datemodified DESC, datecreated desc, random()) as rank
                FROM vansync.ppfa_contactsemails_mym
 			   where datesuppressed is null) a
              WHERE rank='1'
