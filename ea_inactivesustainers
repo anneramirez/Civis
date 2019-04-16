@@ -1,0 +1,40 @@
+select 
+crc.vanid,
+donor.firstname,
+donor.lastname,
+donor.addressline1,
+donor.city,
+donor.state_province,
+donor.zip_postal,
+donor.email,
+crc.contactsrecurringcontributionid as recurring_contribution_id,
+crc.recurringamount::numeric(19,2) as gift_amount,
+(case when crc.financialprogramid in (1,83,143,145) then 'National C3'
+when crc.financialprogramid in (7,84,144,146) then 'National C4'
+else null end) as designation,
+coalesce(crc.datecancelled::date,fail.datereceived::date) as gift_end_date,
+rcs.recurringcontributionstatusname as status,
+succ.datereceived::date as last_successful_payment,
+fail.datereceived::date as last_failed_payment
+from vansync.ppfa_contactsrecurringcontributions_mym crc
+inner join (SELECT DISTINCT
+             *
+             FROM (select *,
+RANK () OVER (PARTITION BY contactsrecurringcontributionid ORDER BY datereceived desc) as rank
+from vansync.ppfa_contactscontributions_mym
+where contributionstatusid = 3)
+             WHERE rank='1'
+           ) succ using (contactsrecurringcontributionid)
+inner join (SELECT DISTINCT
+             *
+             FROM (select *,
+RANK () OVER (PARTITION BY contactsrecurringcontributionid ORDER BY datereceived desc) as rank
+from vansync.ppfa_contactscontributions_mym
+where contributionstatusid = 4)
+             WHERE rank='1'
+           ) fail using (contactsrecurringcontributionid)
+left join vansync.ppfa_recurringcontributionstatuses rcs using (recurringcontributionstatusid)
+inner join anneramirez.ea_sf_donorfile donor on crc.vanid=donor.vanid
+where crc.recurringcontributionstatusid in (2,4)
+and crc.committeeid in (11607,9816,72220,72219)
+order by gift_end_date desc
