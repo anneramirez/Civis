@@ -1,0 +1,65 @@
+drop table anneramirez.ea_sf_donorfile;
+create table anneramirez.ea_sf_donorfile as
+SELECT 
+c.vanid,
+c.title, 
+c.firstname,
+c.middlename,
+c.lastname,
+c.suffix,
+(case when coalesce(addr.addressline1,addr.vaddress) IS NOT NULL THEN 'H' ELSE null END) as address_type,
+coalesce(addr.addressline1,addr.vaddress) as addressline1,
+(case when addr.addressline1 IS NOT NULL THEN addr.addressline2 else null end) as addressline2,
+addr.city,
+coalesce(addr.state,addr.provincename) as state_province, 
+coalesce(addr.zip5,addr.postalcode) as zip_postal,
+addr.zip4,
+addr.countrycode,
+em.email,
+ph.phone,
+ph.phonetypeid 
+ 
+/* *** SOURCE TABLES *** */
+FROM 
+vansync.ppfa_contacts_mym_cont c
+LEFT JOIN (SELECT DISTINCT
+             *
+             FROM (SELECT
+               *,
+               RANK ()
+               OVER (PARTITION BY vanid ORDER BY datemodified DESC, coalesce(vaddress,addressline1) desc, random()) as rank
+               FROM vansync.ppfa_contactsaddresses_mym
+			   where coalesce(vaddress,addressline1) is not null
+         and length(coalesce(vaddress,addressline1))>3
+			   and city is not null
+			   and coalesce(state,provincename) is not null
+			   and coalesce(zip5,postalcode) is not null
+         and datesuppressed is null
+			   ) a
+             WHERE rank='1'
+           ) addr --if any address field is null pulling in, don't send anything (unless new record); not sure how to pull in new record, would prob have to send that from gift file
+USING (vanid)
+LEFT JOIN (SELECT DISTINCT
+             *
+             FROM (SELECT
+               *,
+               RANK ()
+               OVER (PARTITION BY vanid ORDER BY preferredemail desc, datemodified DESC, datecreated desc, random()) as rank
+               FROM vansync.ppfa_contactsemails_mym
+			   where datesuppressed is null) a
+             WHERE rank='1'
+           ) em
+USING (vanid)
+LEFT JOIN (SELECT DISTINCT
+             *
+             FROM (SELECT
+               *,
+               RANK ()
+               OVER (PARTITION BY vanid ORDER BY datemodified DESC, random()) as rank
+               FROM vansync.ppfa_contactsphones_mym
+			   where datesuppressed is null
+			   and phonetypeid='H') a
+             WHERE rank='1'
+           ) ph
+USING (vanid)
+where c.vanid in (select distinct vanid from vansync.ppfa_contactscontributions_mym where committeeid in (11607,9816,72219,72220,68255,65351,65401));
