@@ -1,0 +1,4 @@
+insert into anneramirez.contactsdeduped
+select vsync.* from vansync.ppfa_contactsdeduped_mym vsync
+left outer join anneramirez.contactsdeduped dupe on vsync.contactsdedupedid=dupe.contactsdedupedid
+where dupe.contactsdedupedid is null
