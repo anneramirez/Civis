@@ -1,0 +1,52 @@
+create table anneramirez.ecoa_c4_bounce as
+select
+unsub.vanid,
+unsub.email,
+names.firstname,
+names.lastname,
+coalesce(addr.addressline1,addr.vaddress) as addressline1,
+(case when addr.addressline1 IS NOT NULL THEN addr.addressline2 else null end) as addressline2,
+addr.city,
+coalesce(addr.state,addr.provincename) as state_province, 
+coalesce(addr.zip5,addr.postalcode) as zip_postal,
+addr.countrycode
+from
+/*select emails that have bounced and are unsubscribed*/
+(select distinct ce.vanid, ce.email from vansync.ppfa_contactsemails_mym ce
+inner join (select email from vansync.ppfa_emailsubscriptions_mym where committeeid=9816 and emailsubscriptionstatusid=0) subs on ce.email=subs.email
+inner join (select distinct recipientemail from vansync.ppfa_emaildistributiontrackedevent_mym where "reason--bounce reason" is not null) bounce on ce.email=bounce.recipientemail
+where ce.datesuppressed is null) unsub
+
+/*limit to just donors and action takers*/
+inner join
+(select distinct vanid from
+ (select vanid from vansync.ppfa_contactscontributions_mym
+ union
+ select vanid from vansync.ppfa_contactsonlineforms_mym) 
+) donact on unsub.vanid=donact.vanid
+
+/*remove any records that also have an active subscribed email address (has opened at least one email)*/
+left join 
+(select ce.vanid, ce.email from vansync.ppfa_contactsemails_mym ce
+inner join (select email from vansync.ppfa_emailsubscriptions_mym where committeeid=9816 and emailsubscriptionstatusid=2) subs on ce.email=subs.email
+inner join (select recipientemail from vansync.ppfa_emaildistributiontrackedevent_mym where trackableeventtype='Open Pixel') opens on ce.email=opens.recipientemail
+) sub on unsub.vanid=sub.vanid
+
+
+/*add name fields*/
+left join vansync.ppfa_contacts_mym_cont names on unsub.vanid=names.vanid
+
+/*add address fields*/
+LEFT JOIN (SELECT DISTINCT
+             *
+             FROM (SELECT
+               *,
+               RANK ()
+               OVER (PARTITION BY vanid ORDER BY datemodified DESC, coalesce(vaddress,addressline1) desc, random()) as rank
+               FROM vansync.ppfa_contactsaddresses_mym
+			   where datesuppressed is null
+			   ) a
+             WHERE rank='1'
+           ) addr on unsub.vanid=addr.vanid         
+where sub.vanid is null
+order by vanid asc
