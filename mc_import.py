@@ -32,22 +32,22 @@ class XML2DataFrame:
         for child in root.getchildren():
           return parse_element(child)
                 
-    def parse_element(self, element, parsed=None):
+        def parse_element(self, element, parsed=None):
         #Collect {key:attribute} and {tag:text} from thie XML element and all its children into a single dictionary of strings.#
-        if parsed is None:
-            parsed = dict()
-        for key in element.keys():
-            if key not in parsed:
-                parsed[key] = element.attrib.get(key)
-            if element.text:
-                parsed[element.tag] = element.text
-            else:
-                raise ValueError('duplicate attribute {0} at element {1}'.format(key, element.getroottree().getpath(element)))           
+          if parsed is None:
+              parsed = dict()
+          for key in element.keys():
+              if key not in parsed:
+                 parsed[key] = element.attrib.get(key)
+              if element.text:
+                 parsed[element.tag] = element.text
+              else:
+                  raise ValueError('duplicate attribute {0} at element {1}'.format(key, element.getroottree().getpath(element)))           
 
-     # Apply recursion #
-     for child in list(element):
-         self.parse_element(child, parsed)
-     return parsed
+       # Apply recursion #
+        for child in list(element):
+            self.parse_element(child, parsed)
+        return parsed
       
     def process_data(self):
         # Initiate the root XML, parse it, and return a dataframe #
