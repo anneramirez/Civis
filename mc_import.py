@@ -29,7 +29,8 @@ class XML2DataFrame:
 
     def parse_root(self, root):
         #Return a list of dictionaries from the text and attributes of the children under this XML root.#
-        return [parse_element(child) for child in root.getchildren()]
+        for child in root.getchildren():
+          return parse_element(child) 
 
     def parse_element(self, element, parsed=None):
         #Collect {key:attribute} and {tag:text} from thie XML element and all its children into a single dictionary of strings.#
