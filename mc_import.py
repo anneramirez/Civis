@@ -27,11 +27,6 @@ class XML2DataFrame:
     def __init__(self, xml_data):
         self.root = ET.XML(xml_data)
 
-    def parse_root(self, root):
-        #Return a list of dictionaries from the text and attributes of the children under this XML root.#
-        for child in root.getchildren():
-          return parse_element(child) 
-
     def parse_element(self, element, parsed=None):
         #Collect {key:attribute} and {tag:text} from thie XML element and all its children into a single dictionary of strings.#
         if parsed is None:
@@ -50,6 +45,11 @@ class XML2DataFrame:
             self.parse_element(child, parsed)
         return parsed
 
+    def parse_root(self, root):
+        #Return a list of dictionaries from the text and attributes of the children under this XML root.#
+        for child in root.getchildren():
+          return parse_element(child)
+      
     def process_data(self):
         # Initiate the root XML, parse it, and return a dataframe #
         structure_data = self.parse_root(self.root)
