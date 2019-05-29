@@ -27,7 +27,7 @@ class XML2DataFrame:
   def __init__(self, xml_data):
     self.root = ET.XML(xml_data)
   def parse_root(self, root):
-    def parse_element(self, element, parsed=None):
+    def parse_element(element, parsed=None):
       #Collect {key:attribute} and {tag:text} from thie XML element and all its children into a single dictionary of strings.
       if parsed is None:
         parsed = dict()
