@@ -6,7 +6,7 @@ import os
 from requests.auth import HTTPBasicAuth
 import pandas as pd
 import xml.etree.ElementTree as ET
-import io
+
 
 
 url = "https://secure.mcommons.com/api/profiles"
@@ -22,24 +22,45 @@ payload = ""
 headers = {'Content-type' : 'application/json'}
 
 r = requests.request("GET", url, auth = HTTPBasicAuth(user,pw), data=payload, headers=headers, params=querystring)
-xml_data = io.StringIO(r.text)
+xml_data = (r.content)
 
-def iter_docs(profile):
-    profile_attr = profile.attrib
-    for doc in profile.iter('document'):
-        doc_dict = profile_attr.copy()
-        doc_dict.update(doc.attrib)
-        doc_dict['data'] = doc.text
-        yield doc_dict
-        
-def iter_profile(etree):
-    for profile in etree.iter('profile'):
-        for row in iter_docs(profile):
-            yield row
-        
-etree = ET.parse(xml_data) #create an ElementTree object 
-doc_df = pd.DataFrame(list(iter_profile(etree)))
-print(doc_df)
+class XML2DataFrame:
+
+    def __init__(self, xml_data):
+        self.root = ET.XML(xml_data)
+
+    def parse_root(self, root):
+        """Return a list of dictionaries from the text and attributes of the
+        children under this XML root."""
+        return [parse_element(child) for child in root.getchildren()]
+
+    def parse_element(self, element, parsed=None):
+        """ Collect {key:attribute} and {tag:text} from thie XML
+         element and all its children into a single dictionary of strings."""
+        if parsed is None:
+            parsed = dict()
+
+        for key in element.keys():
+            if key not in parsed:
+                parsed[key] = element.attrib.get(key)
+            if element.text:
+                parsed[element.tag] = element.text                
+            else:
+                raise ValueError('duplicate attribute {0} at element {1}'.format(key, element.getroottree().getpath(element)))           
+
+        """ Apply recursion"""
+        for child in list(element):
+            self.parse_element(child, parsed)
+        return parsed
+
+    def process_data(self):
+        """ Initiate the root XML, parse it, and return a dataframe"""
+        structure_data = self.parse_root(self.root)
+        return pd.DataFrame(structure_data)
+
+xml2df = XML2DataFrame(xml_data)
+xml_dataframe = xml2df.process_data()
+print(xml_dataframe)
 
 #client = civis.APIClient()
 
