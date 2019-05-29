@@ -4,7 +4,7 @@ import civis
 import json
 import os
 from requests.auth import HTTPBasicAuth
-import pandas
+import pandas as pd
 
 url = "https://secure.mcommons.com/api/profiles"
 user = "anne.ramirez@ppfa.org"
@@ -19,4 +19,7 @@ payload = ""
 headers = {'Content-type' : 'application/json'}
 
 r = requests.request("GET", url, auth = HTTPBasicAuth(user,pw), data=payload, headers=headers, params=querystring)
-print(json.dumps(xmltodict.parse(r.text)))
+print(xmltodict.parse(r.text))
+
+#client = civis.APIClient()
+
