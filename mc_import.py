@@ -39,7 +39,7 @@ def iter_profile(etree):
         
 etree = ET.parse(xml_data) #create an ElementTree object 
 doc_df = pd.DataFrame(list(iter_profile(etree)))
-
+print(doc_df)
 
 #client = civis.APIClient()
 
