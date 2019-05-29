@@ -7,8 +7,6 @@ from requests.auth import HTTPBasicAuth
 import pandas as pd
 import xml.etree.ElementTree as ET
 
-
-
 url = "https://secure.mcommons.com/api/profiles"
 user = "anne.ramirez@ppfa.org"
 pw = "Dre$m0B0$t"
@@ -57,8 +55,9 @@ class XML2DataFrame:
         return pd.DataFrame(structure_data)
 
 xml2df = XML2DataFrame(xml_data)
+xml_dataframe = xml2df.process_data()
 
-print(xml2df)
+print(xml_data)
 
 #client = civis.APIClient()
 
