@@ -1,11 +1,10 @@
 import xmltodict
 import requests
 import civis
-#import json
-#import os
-#from requests.auth import HTTPBasicAuth
-#import pandas
-#import xml.etree.ElementTree as ET
+import json
+import os
+from requests.auth import HTTPBasicAuth
+import pandas
 
 url = "https://secure.mcommons.com/api/profiles"
 user = "anne.ramirez@ppfa.org"
