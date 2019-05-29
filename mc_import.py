@@ -1,4 +1,4 @@
-import xml2json
+import xmltodict
 import requests
 import civis
 #import json
@@ -20,6 +20,4 @@ payload = ""
 headers = {'Content-type' : 'application/json'}
 
 r = requests.request("GET", url, auth = HTTPBasicAuth(user,pw), data=payload, headers=headers, params=querystring)
-root = ET.fromstring(r.text)
-print(root)
-print xml2json.xml2json(r.text)
+print(json.dumps(xmltodict.parse(r.text)))
