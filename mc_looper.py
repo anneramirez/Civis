@@ -10,7 +10,6 @@ from pandas.io.json import json_normalize
 user = "anne.ramirez@ppfa.org"
 pw = "Dre$m0B0$t"
 auth = HTTPBasicAuth(user,pw)
-params=params
 payload = ""
 headers = {'Content-type' : 'application/json'}
 
