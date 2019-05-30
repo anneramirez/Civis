@@ -6,6 +6,7 @@ import os
 from requests.auth import HTTPBasicAuth
 import pandas as pd
 import xml.etree.ElementTree as ET
+from pandas.io.json import json_normalize
 
 url = "https://secure.mcommons.com/api/profiles"
 user = "anne.ramirez@ppfa.org"
@@ -21,7 +22,7 @@ headers = {'Content-type' : 'application/json'}
 
 r = requests.request("GET", url, auth = HTTPBasicAuth(user,pw), data=payload, headers=headers, params=querystring)
 data = xmltodict.parse(r.content)
-print(pd.json_normalize(data, sep='_'))
+print(json_normalize(data, sep='_'))
 
 
 #client = civis.APIClient()
