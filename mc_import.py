@@ -2,10 +2,8 @@ import xmltodict
 import requests
 import civis
 import json
-import os
 from requests.auth import HTTPBasicAuth
 import pandas as pd
-import xml.etree.ElementTree as ET
 from pandas.io.json import json_normalize
 
 url = "https://secure.mcommons.com/api/profiles"
@@ -30,9 +28,26 @@ def flatten_dict(dd, separator='_', prefix=''):
              } if isinstance(dd, dict) else { prefix : dd }
 
 flat = [flatten_dict(x) for x in data['response']['profiles']['profile']]
-df = pd.DataFrame(flat)
+df = pd.DataFrame(flat,columns=['id','first_name','last_name',
+'phone_number',
+'email',
+'status',
+'created_at',
+'updated_at',
+'source_id'   
+'source_type',
+'source_name', 
+'source_opt_in_path_id,
+'opted_out_at',
+'outed_out_source',
+'address_street1',
+'address_street2',
+'address_city',
+'address_state',
+'address_postal_code',
+'address_country',
+'run_date'])
 
-print(df)
 ### Dataframe to Civis ###
 client = civis.APIClient()
-civis.io.dataframe_to_civis(df, 'redshift-ppfa', 'anneramirez.mc_profiles',existing_table_rows='append')
+civis.io.dataframe_to_civis(df, 'redshift-ppfa', 'anneramirez.mc_profiles',existing_table_rows='drop',distkey:id)
