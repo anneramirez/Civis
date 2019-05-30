@@ -21,16 +21,18 @@ payload = ""
 headers = {'Content-type' : 'application/json'}
 
 r = requests.request("GET", url, auth = HTTPBasicAuth(user,pw), data=payload, headers=headers, params=querystring)
+data = xmltodict.parse(r.content, attr_prefix='')
 
-def handle_id(_,profile):
-    print(profile['id'])
-    return true
+def flatten_dict(dd, separator='_', prefix=''):
+    return { prefix + separator + k if prefix else k : v
+             for kk, vv in dd.items()
+             for k, v in flatten_dict(vv, separator, kk).items()
+             } if isinstance(dd, dict) else { prefix : dd }
 
-data = xmltodict.parse(r.content, item_depth=3, item_callback=handle_id)
-flat = json_normalize(data, sep='_')
-print(flat)
-#df = pd.DataFrame(flat)
+flat = [flatten_dict(x) for x in data['response']['profiles']['profile']]
+df = pd.DataFrame(flat)
 
-
-#client = civis.APIClient()
-
+print(df)
+### Dataframe to Civis ###
+client = civis.APIClient()
+civis.io.dataframe_to_civis(df, 'redshift-ppfa', 'anneramirez.mc_profiles',existing_table_rows='append')
