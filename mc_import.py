@@ -12,8 +12,7 @@ pw = "Dre$m0B0$t"
 querystring = {"include_custom_columns":"false",
                "include_subscriptions":"false",
               "include_clicks":"false",
-              "include_members":"false",
-              "limit":"10"}
+              "include_members":"false"}
 
 payload = ""
 headers = {'Content-type' : 'application/json'}
@@ -28,13 +27,14 @@ def flatten_dict(dd, separator='_', prefix=''):
              } if isinstance(dd, dict) else { prefix : dd }
 
 flat = [flatten_dict(x) for x in data['response']['profiles']['profile']]
-df = pd.DataFrame(flat,columns=['id','first_name','last_name',
+df = pd.DataFrame(flat,
+                  columns=['id','first_name','last_name',
 'phone_number',
 'email',
 'status',
 'created_at',
 'updated_at',
-'source_id'   
+'source_id',   
 'source_type',
 'source_name', 
 'source_opt_in_path_id',
