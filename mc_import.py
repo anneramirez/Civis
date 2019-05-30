@@ -21,10 +21,15 @@ payload = ""
 headers = {'Content-type' : 'application/json'}
 
 r = requests.request("GET", url, auth = HTTPBasicAuth(user,pw), data=payload, headers=headers, params=querystring)
-data = xmltodict.parse(r.content, item_depth=2)
-flat = json_normalize(data, sep='_')
 
-df = pd.DataFrame(flat)
+def handle_id(_,profile):
+    print(profile['id'])
+    return true
+
+data = xmltodict.parse(r.content, item_depth=3, item_callback=handle_id)
+flat = json_normalize(data, sep='_')
+print(flat)
+#df = pd.DataFrame(flat)
 
 
 #client = civis.APIClient()
