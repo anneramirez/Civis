@@ -21,7 +21,7 @@ payload = ""
 headers = {'Content-type' : 'application/json'}
 
 r = requests.request("GET", url, auth = HTTPBasicAuth(user,pw), data=payload, headers=headers, params=querystring)
-data = xmltodict.parse(r.content, item_depth=3)
+data = xmltodict.parse(r.content, item_depth=2)
 flat = json_normalize(data, sep='_')
 
 df = pd.DataFrame(flat)
