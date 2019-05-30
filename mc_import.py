@@ -50,4 +50,4 @@ df = pd.DataFrame(flat,columns=['id','first_name','last_name',
 
 ### Dataframe to Civis ###
 client = civis.APIClient()
-civis.io.dataframe_to_civis(df, 'redshift-ppfa', 'anneramirez.mc_profiles',existing_table_rows='drop',distkey:id)
+civis.io.dataframe_to_civis(df, 'redshift-ppfa', 'anneramirez.mc_profiles',existing_table_rows='drop',distkey='id')
