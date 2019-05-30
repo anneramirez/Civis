@@ -37,7 +37,7 @@ df = pd.DataFrame(flat,columns=['id','first_name','last_name',
 'source_id'   
 'source_type',
 'source_name', 
-'source_opt_in_path_id,
+'source_opt_in_path_id',
 'opted_out_at',
 'outed_out_source',
 'address_street1',
