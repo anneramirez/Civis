@@ -19,7 +19,7 @@ url = "https://secure.mcommons.com/api/profiles"
 params = {"include_custom_columns":"false",
                "include_subscriptions":"false",
               "include_clicks":"false",
-              "include_members":"false"
+              "include_members":"false",
               "page":"1"}
 dfcolumns = '['id','first_name','last_name',
 'phone_number',
