@@ -59,8 +59,9 @@ def loopPages(url,auth,params):
 
 data = loopPages(url,auth,params)
 
-df = pd.DataFrame(data,columns=['id',
-                                'first_name',
+df = pd.DataFrame(data,
+                  columns=['id',
+                           'first_name',
                                 'last_name',
                                 'phone_number',
                                 'email',
