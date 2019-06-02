@@ -14,11 +14,11 @@ headers = {'Content-type' : 'application/json'}
 
 ### VAR Profiles ###
 url = "https://secure.mcommons.com/api/profiles"
-params = {"include_custom_columns":"false",
-               "include_subscriptions":"false",
-              "include_clicks":"false",
-              "include_members":"false",
-              "page":1}
+params = {'include_custom_columns':'false',
+          'include_subscriptions':'false',
+          'include_clicks':'false',
+          'include_members':'false',
+          'page':1}
 
 
 ###Flatten###
@@ -39,20 +39,18 @@ def flatXML(tree):
     return flat
 
 def getAPIdata(url,auth,params):
-    resp = requests.get(url, auth=auth, data=payload, headers=headers, params=params)
+    resp = requests.get(url, auth=auth, params=params)
     return resp 
   
 def loopPages(url,auth,params): 
     records = []
-    while True:
+    while (params['page'] < 4):
         resp = getAPIdata(url,auth,params)
         tree = processXML(resp)
         r = flatXML(tree)
         if (int(tree['response']['profiles']['num']) > 0):
             records.extend(r) #add data file to set
             params['page'] += 1 #go to next page
-        if params['page'] == 3:
-            break  
         else:
             break
     return records
