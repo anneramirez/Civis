@@ -8,6 +8,7 @@ import os
 
 ### VAR Environment ###
 endpoint = os.environ.get('endpoint')
+update_from = os.environ.get('update_from')
 
 ### VAR Global ###
 user = "anne.ramirez@ppfa.org"
@@ -22,7 +23,8 @@ params = {'include_custom_columns':'false',
           'include_subscriptions':'false',
           'include_clicks':'false',
           'include_members':'false',
-          'page':1}
+          'page':1,
+          'from':update_from+' 00:00:00 UTC'}
 
 
 ###Flatten###
