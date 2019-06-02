@@ -19,43 +19,49 @@ params = {"include_custom_columns":"false",
                "include_subscriptions":"false",
               "include_clicks":"false",
               "include_members":"false",
-              "page":"1"}
+              "page":1}
 
-
-#r = requests.request("GET", url, auth = HTTPBasicAuth(user,pw), data=payload, headers=headers, params=params)
-#data = xmltodict.parse(r.content, attr_prefix='')
-
-###draft get request###
-def getAPIdata(url,auth,params):
-    r = requests.get(url, auth=auth, data=payload, headers=headers, params=params)
-    return r
 
 ###Flatten###
 def flatten_dict(d, separator='_', prefix=''):
-  return { prefix + separator + k if prefix else k : v
-             for k, v in d.items()
-             for k, v in flatten_dict(v, separator, k).items()
-             } if isinstance(d, dict) else { prefix : d }
+    return { prefix + separator + k if prefix else k : v
+            for k, v in d.items()
+            for k, v in flatten_dict(v, separator, k).items()
+            } if isinstance(d, dict) else { prefix : d }
 
-###draft Process XML Response PROFILES###
-def processXML(r):
-  data = xmltodict.parse(r.content, attr_prefix='')
-  flat = [flatten_dict(x) for x in data['response']['profiles']['profile']]
-  return flat
+###draft Parse XML Response PROFILES###
+def processXML(d):
+    tree = xmltodict.parse(d.content, attr_prefix='')
+    return tree
+
+###draft Flat XML Response PROFILES###
+def flatXML(tree):
+    flat = [flatten_dict(x) for x in tree['response']['profiles']['profile']]
+    return flat
+
+def getAPIdata(url,auth,params):
+    resp = requests.get(url, auth=auth, data=payload, headers=headers, params=params)
+    #d = processXML(resp)
+    #r = flatXML(d)
+    return resp 
   
-###draft loop function###
 def loopPages(url,auth,params): 
-  records = []
-  while True:
-    r = getAPIdata(url,auth,params)
-    if ('results' in r) and (r['results'] is not None) and (len(r['results']) > 0): #loop
-      #name = names + '_' + str(p['page']) #??
-      #fileBack = writeData(r,name) #create data file
-      rlist = processXML(r)
-      records.append(rlist) #add data file to set
-      params['page'] += 1 #go to next page
-    else:
-      break
+    records = []
+    while True:
+        resp = getAPIdata(url,auth,params)
+        tree = processXML(resp)
+        r = flatXML(tree)
+        #if ('results' in r) and (r['results'] is not None) and (len(r['results']) > 0): #loop
+        if (int(tree['response']['profiles']['num']) > 0):
+            #name = names + '_' + str(p['page']) #??
+            #fileBack = writeData(r,name) #create data file
+            #rlist = processXML(r)
+            records.extend(r) #add data file to set
+            params['page'] += 1 #go to next page
+        if params['page'] == 3:
+            break  
+        else:
+            break
     return records
 
 records = loopPages(url,auth,params)
@@ -80,8 +86,6 @@ df = pd.DataFrame(records,
 'address_postal_code',
 'address_country',
 'run_date'])
-
-
 
 ### Dataframe to Civis ###
 client = civis.APIClient()
