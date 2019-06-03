@@ -24,7 +24,7 @@ params = {'include_custom_columns':'false',
           'include_clicks':'false',
           'include_members':'false',
           'page':1,
-          'from':update_from+' 00:00:00 UTC'}
+          'from':update_from}
 
 ## Set column names per endpoint ##
 profiles_columns = ['id',
@@ -49,8 +49,16 @@ profiles_columns = ['id',
                                 'address_country',
                                 'run_date']
 subscriptions_columns = ['id'.
-                         'campaign_id'.
-                         'campaign_name'.
+                         'campaign_id',
+                         'campaign_name',
+                         'campaign_description',
+                         'opt_in_path_id',
+                         'status',
+                         'opt_in_source',
+                         'created_at',
+                         'activated_at',
+                         'opted_out_at',
+                         'opt_out_source']
                          
 'subscriptions_subscription': [OrderedDict([('campaign_id', '16031'), ('campaign_name', 'Static Facebook Opt-in'), ('campaign_description', 'Web path for opt-ins on Facebook App when no specific campaign is running.'), ('opt_in_path_id', '19441'), ('status', 'Opted-Out'), ('opt_in_source', 'Pro-Choice breaking news'), ('created_at', '2009-06-02T04:13:39Z'), ('activated_at', '2009-06-02T04:13:39Z'), ('opted_out_at', '2009-09-25T18:18:22Z'), ('opt_out_source', 'Hard bounce')]),                         
                          
@@ -62,30 +70,35 @@ def flatten_dict(d, separator='_', prefix=''):
             for k, v in flatten_dict(v, separator, k).items()
             } if isinstance(d, dict) else { prefix : d }
 
-###draft Parse XML Response ###
+### Parse XML Response ###
 def processXML(d):
     tree = xmltodict.parse(d.content, attr_prefix='')
     return tree
 
-###draft Flat XML Response PROFILES###
+### Flat XML Response PROFILES###
 def flatXML(tree):
     flat = [flatten_dict(x) for x in tree['response']['profiles']['profile']]
     return flat
 
+### API Call ###
 def getAPIdata(url,auth,params):
     resp = requests.get(url, auth=auth, params=params)
     return resp 
-  
+
+### Loop through pages to get all results ###
 def loopPages(url,auth,params): 
     records = []
-    while (params['page'] < 4):
-        resp = getAPIdata(url,auth,params)
-        tree = processXML(resp)
-        r = flatXML(tree)
-        if (int(tree['response']['profiles']['num']) > 0):
-            records.extend(r) #add data file to set
-            params['page'] += 1 #go to next page
-        else:
+    while True:
+        try:
+            resp = getAPIdata(url,auth,params)
+            tree = processXML(resp)
+            r = flatXML(tree)
+            if (int(tree['response']['profiles']['num']) > 0):
+                records.extend(r) #add data file to set
+                params['page'] += 1 #go to next page
+            else:
+                break
+        except:
             break
     return records
 
