@@ -20,8 +20,8 @@ params = {'include_custom_columns':'false',
           'include_members':'false',
           'page':1,
           'company':14931,
-          'to':'2017-12-12',
-          'from':'2017-01-01'} #include company id for C4
+          #'to':'2018-12-12',
+          'from':'2019-01-01'} #include company id for C4
 
 
 ###Flatten###
@@ -88,4 +88,4 @@ df = pd.DataFrame(data,
 
 ### Dataframe to Civis ###
 client = civis.APIClient()
-civis.io.dataframe_to_civis(df, 'redshift-ppfa', 'anneramirez.mc_ppaf_profiles', existing_table_rows='drop', distkey='id')
+civis.io.dataframe_to_civis(df, 'redshift-ppfa', 'anneramirez.mc_ppaf_profiles', existing_table_rows='append', distkey='id')
