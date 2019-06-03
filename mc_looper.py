@@ -47,13 +47,16 @@ def getAPIdata(url,auth,params):
 def loopPages(url,auth,params): 
     records = []
     while True:
-        resp = getAPIdata(url,auth,params)
-        tree = processXML(resp)
-        r = flatXML(tree)
-        if (int(tree['response']['profiles']['num']) > 0):
-            records.extend(r) #add data file to set
-            params['page'] += 1 #go to next page
-        else:
+        try:
+            resp = getAPIdata(url,auth,params)
+            tree = processXML(resp)
+            r = flatXML(tree)
+            if (int(tree['response']['profiles']['num']) > 0):
+                records.extend(r) #add data file to set
+                params['page'] += 1 #go to next page
+            else:
+                break
+        except:
             break
     return records
 
