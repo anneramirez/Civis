@@ -19,9 +19,10 @@ params = {'include_custom_columns':'false',
           'include_clicks':'false',
           'include_members':'false',
           'page':1,
-          'company':14931,
-          'to':'2018-12-12',
-          'from':'2018-01-01'} #include company id for C4
+          'company':14931, #include company id for c4
+          'to':'2016-12-12', #include records with updated date on or before
+          #'from':'2018-01-01' #include records with updated date on or after
+         } 
 
 
 ###Flatten###
