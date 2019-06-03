@@ -18,7 +18,8 @@ params = {'include_custom_columns':'false',
           'include_subscriptions':'false',
           'include_clicks':'false',
           'include_members':'false',
-          'page':1}
+          'page':1,
+          'company':14931 #include for C4}
 
 
 ###Flatten###
@@ -44,7 +45,7 @@ def getAPIdata(url,auth,params):
   
 def loopPages(url,auth,params): 
     records = []
-    while (params['page'] < 4):
+    while True:
         resp = getAPIdata(url,auth,params)
         tree = processXML(resp)
         r = flatXML(tree)
@@ -82,4 +83,4 @@ df = pd.DataFrame(data,
 
 ### Dataframe to Civis ###
 client = civis.APIClient()
-civis.io.dataframe_to_civis(df, 'redshift-ppfa', 'anneramirez.mc_profiles', existing_table_rows='drop', distkey='id')
+civis.io.dataframe_to_civis(df, 'redshift-ppfa', 'anneramirez.mc_ppaf_profiles', existing_table_rows='drop', distkey='id')
