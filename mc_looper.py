@@ -20,7 +20,7 @@ params = {'include_custom_columns':'false',
           'include_members':'false',
           'page':1,
           'company':14931,
-         'to':'2016-12-12 00:00:00 UTC'} #include company id for C4
+         'to':'2016-12-12'} #include company id for C4
 
 
 ###Flatten###
