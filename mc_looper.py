@@ -19,7 +19,7 @@ params = {'include_custom_columns':'false',
           'include_clicks':'false',
           'include_members':'false',
           'page':1,
-          'company':14931 #include for C4}
+          'company':14931} #include company id for C4
 
 
 ###Flatten###
