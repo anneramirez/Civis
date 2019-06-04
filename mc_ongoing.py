@@ -60,7 +60,7 @@ subscriptions_columns = ['id'.
                          'opted_out_at',
                          'opt_out_source']
                          
-'subscriptions_subscription': [OrderedDict([('campaign_id', '16031'), ('campaign_name', 'Static Facebook Opt-in'), ('campaign_description', 'Web path for opt-ins on Facebook App when no specific campaign is running.'), ('opt_in_path_id', '19441'), ('status', 'Opted-Out'), ('opt_in_source', 'Pro-Choice breaking news'), ('created_at', '2009-06-02T04:13:39Z'), ('activated_at', '2009-06-02T04:13:39Z'), ('opted_out_at', '2009-09-25T18:18:22Z'), ('opt_out_source', 'Hard bounce')]),                         
+                   
                          
 
 ###Flatten###
@@ -85,27 +85,47 @@ def getAPIdata(url,auth,params):
     resp = requests.get(url, auth=auth, params=params)
     return resp 
 
-### Loop through pages to get all results ###
-def loopPages(url,auth,params): 
+### SUBSCRIPTIONS Loop through profiles to pull out subscriptions ###
+def loopSubs(d):
+    i = 0
     records = []
-    while True:
+    for index in d:
+        try:
+            records.append((d[i]['id'],d[i]['subscriptions']))
+            i += 1
+        except KeyError:
+            if (d[i]['status'] == 'Profiles with no Subscriptions'):
+                i =+ 1
+                continue
+            else:
+                print('error')
+                break
+    return records
+
+### PROFILES Loop through pages to get all results ###
+def loopPages(url,auth,params): 
+    recordsPro = []
+    recordsSubs = []
+    while (params['page'] < 4): #change to while True when done testing!!
         try:
             resp = getAPIdata(url,auth,params)
             tree = processXML(resp)
             r = flatXML(tree)
             if (int(tree['response']['profiles']['num']) > 0):
-                records.extend(r) #add data file to set
+                recordsPro.extend(r) #add data file to set
+                subs = loopSubs(tree['response']['profiles']['profile'])
+                recordsSubs.extend(subs)
                 params['page'] += 1 #go to next page
             else:
                 break
         except:
             break
-    return records
+    return recordsPro, recordsSubs
 
-data = loopPages(url,auth,params)
+dataPro, dataSubs = loopPages(url,auth,params)
 
-df = pd.DataFrame(data,
-                  columns=endpoint_columns)
+df = pd.DataFrame(dataPro,
+                  columns=endpoint_columns) #how to use parameters for this?
 
 ### Dataframe to Civis ###
 client = civis.APIClient()
