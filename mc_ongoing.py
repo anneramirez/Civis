@@ -1,3 +1,5 @@
+##parameterized script###
+
 import xmltodict
 import requests
 import civis
@@ -16,15 +18,18 @@ user = "anne.ramirez@ppfa.org"
 pw = "Dre$m0B0$t"
 auth = HTTPBasicAuth(user,pw)
 payload = ""
-headers = {'Content-type' : 'application/json'}
+headers = {}
 
 ### VAR Profiles ###
-params = {'include_custom_columns':'false',
-          'include_subscriptions':'false',
-          'include_clicks':'false',
-          'include_members':'false',
-          'page':1,
-          'from':update_from}
+params_profiles = {'include_custom_columns':'false',
+                   'include_subscriptions':'false',
+                    'include_clicks':'false',
+                    'include_members':'false',
+                    'page':1,
+                    'from':update_from}
+params_subscriptions = 
+
+
 
 ## Set column names per endpoint ##
 profiles_columns = ['id',
