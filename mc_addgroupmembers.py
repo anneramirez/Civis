@@ -1,27 +1,36 @@
-import xmltodict
 import requests
 import civis
 import json
+import os
 from requests.auth import HTTPBasicAuth
-import pandas as pd
+
+### VAR Environment ###
+user = os.environ.get('MC_CREDENTIAL_USERNAME')
+pw = os.environ.get('MC_CREDENTIAL_PASSWORD')
+group_id = os.environ.get('group_id')
+db_table = os.environ.get('db_table')
+company = os.environ.get('company_key')
+
+params = {'group_id':group_id, #487022 for testing
+          'company':company,
+         'phone_number':0}
 
 ### VAR Global ###
-user = "anne.ramirez@ppfa.org"
-pw = "Dre$m0B0$t"
 auth = HTTPBasicAuth(user,pw)
-
 url='https://secure.mcommons.com/api/add_group_member'
-params = {'group_id':487022,
-         'phone_number':0}
 
 ### Query Civis ###
 client = civis.APIClient()
-d=civis.io.read_civis('anneramirez.mc_test', 'redshift-ppfa')
+
+d=civis.io.read_civis(db_table, 'redshift-ppfa') #anneramirez.mc_test for testing
 phone_string=(",".join(str(v) for n in d[1:] for v in n))
 params['phone_number'] = phone_string
 
-print(params)
-{'group_id': 484973, 'phone_number': '13014048269,14155958458'}
+def getAPIdata(url,auth,params):
+    resp = requests.get(url, auth=auth, params=params)
+    return resp 
 
-### just need to make api call! ###
-### also this um doesn't need to be a separate script, can do in civis python script ###
+r = getAPIdata(url,auth,params)
+
+print(r)
+print(params)
