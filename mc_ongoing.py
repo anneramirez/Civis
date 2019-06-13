@@ -27,7 +27,10 @@ params_profiles = {'include_custom_columns':'false',
                     'include_members':'false',
                     'page':1,
                     'from':update_from}
-params_subscriptions = 
+params_subscriptions = {'include_custom_columns':'false',
+                   'include_subscriptions':'true',
+                    'include_clicks':'false',
+                    'include_members':'false'}
 
 
 
@@ -135,3 +138,28 @@ df = pd.DataFrame(dataPro,
 ### Dataframe to Civis ###
 client = civis.APIClient()
 civis.io.dataframe_to_civis(df, 'redshift-ppfa', 'anneramirez.mc_profiles', existing_table_rows='append', distkey='id')
+
+
+
+
+#### possible solution for subs ####
+def subResource(g) #g = tree['response']['profiles']['profile']
+  subs = []
+  single = {}
+  for p in t:
+    for k,v in p.items():
+        if k =='id':
+            try:
+              for s in p['clicks']['click']: #need to account for records with a single click, they print as string.
+                single.update({'profile_id':v})
+                for a,b in s.items():
+                  single.update({a:b})
+                subs.append(single) 
+                single = {}
+            except Exception as ex:
+              print(k,v,ex)
+              continue
+  return subs                   
+
+
+
