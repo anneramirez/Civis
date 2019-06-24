@@ -11,6 +11,7 @@ import os
 ### VAR Environment ###
 endpoint = os.environ.get('endpoint')
 update_from = os.environ.get('update_from')
+obj = 'object' #add this;
 
 ### VAR Global ###
 url = "https://secure.mcommons.com/api/" + endpoint
@@ -20,19 +21,28 @@ auth = HTTPBasicAuth(user,pw)
 payload = ""
 headers = {}
 
-### VAR Profiles ###
+### VAR Resources ###
 params_profiles = {'include_custom_columns':'false',
                    'include_subscriptions':'false',
                     'include_clicks':'false',
                     'include_members':'false',
                     'page':1,
                     'from':update_from}
+obj = 'profile'
 params_subscriptions = {'include_custom_columns':'false',
                    'include_subscriptions':'true',
                     'include_clicks':'false',
                     'include_members':'false'}
-
-
+params_clicks = {'include_custom_columns':'false',
+                   'include_subscriptions':'true',
+                    'include_clicks':'true',
+                    'include_members':'false'}
+### VAR Outgoing ###
+params_outgoing = {'start_time':'2019-06-20',
+        'page':1,
+          'limit':100
+         }
+obj = 'message'
 
 ## Set column names per endpoint ##
 profiles_columns = ['id',
@@ -79,13 +89,14 @@ def flatten_dict(d, separator='_', prefix=''):
             } if isinstance(d, dict) else { prefix : d }
 
 ### Parse XML Response ###
-def processXML(d):
+def processXML(d, obj):
     tree = xmltodict.parse(d.content, attr_prefix='')
-    return tree
+    node = tree['response'][obj+'s'][obj]
+    return tree, node
 
 ### Flat XML Response PROFILES###
-def flatXML(tree):
-    flat = [flatten_dict(x) for x in tree['response']['profiles']['profile']]
+def flatXML(node):
+    flat = [flatten_dict(x) for x in node]
     return flat
 
 ### API Call ###
@@ -119,7 +130,7 @@ def loopPages(url,auth,params):
             resp = getAPIdata(url,auth,params)
             tree = processXML(resp)
             r = flatXML(tree)
-            if (int(tree['response']['profiles']['num']) > 0):
+            if (int(tree['response']['profiles']['num']) > 0): #Why did i add this? can't find when i got an error
                 recordsPro.extend(r) #add data file to set
                 subs = loopSubs(tree['response']['profiles']['profile'])
                 recordsSubs.extend(subs)
@@ -143,23 +154,43 @@ civis.io.dataframe_to_civis(df, 'redshift-ppfa', 'anneramirez.mc_profiles', exis
 
 
 #### possible solution for subs ####
-def subResource(g) #g = tree['response']['profiles']['profile']
+### API Call ###
+def getAPIdata(url,auth,params):
+    resp = requests.get(url, auth=auth, params=params)
+    return resp 
+
+def processXML(d):
+    tree = xmltodict.parse(d.content, attr_prefix='', dict_constructor=dict)
+    return tree
+  
+raw = getAPIdata(url,auth,params)
+tree=processXML(raw)
+t = tree['response']['profiles']['profile']
+
+def subResource(t) #t = tree['response']['profiles']['profile']
   subs = []
   single = {}
   for p in t:
     for k,v in p.items():
         if k =='id':
             try:
-              for s in p['clicks']['click']: #need to account for records with a single click, they print as string.
-                single.update({'profile_id':v})
-                for a,b in s.items():
-                  single.update({a:b})
-                subs.append(single) 
-                single = {}
+                path = p[obj+'s'][obj]
+                if isinstance(path, dict): #this is single dict vs list of dicts ie if profile only has one click
+                    single.update({'profile_id':v})
+                    for a,b in path.items():
+                        single.update({a:b})
+                    subs.append(single) 
+                    single = {}
+                elif isinstance(path, list):
+                    for s in path:
+                        single.update({'profile_id':v})
+                        for a,b in s.items():
+                            single.update({a:b})
+                        subs.append(single) 
+                        single = {}
             except Exception as ex:
-              print(k,v,ex)
-              continue
-  return subs                   
+                continue                  
+return subs                 
 
 
 
