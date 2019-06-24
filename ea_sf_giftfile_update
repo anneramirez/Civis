@@ -27,33 +27,13 @@ SELECT
 CONVERT_TIMEZONE('US/Eastern', getdate()) AS insertdate
 	,
 	/* file type */
-	(
-		CASE 
-			WHEN cont.financialprogramid IN ( 
-					1
-					,83
-					,143
-					,145
+	(CASE 
+   		WHEN cont.financialprogramid IN (1,83,143,145
         ,78  --PMG - remove once sustainers are migrated
-					)
-				THEN 'ppfa.ea_C3_PPFA_'
-			WHEN cont.financialprogramid IN (
-					7
-					,84
-					,144
-					,146
-					)
-				THEN 'ppfa.ea_C4_PPAF_'
-			WHEN cont.financialprogramid IN (
-					82
-					,148
-					)
-				THEN 'ppfa.ea_PAC_'
-			WHEN cont.financialprogramid IN (
-					77
-					,147
-					)
-				THEN 'ppfa.ea_VOTES_'
+					) THEN 'ppfa.ea_C3_PPFA_'
+			WHEN cont.financialprogramid IN (7,84,144,146) THEN 'ppfa.ea_C4_PPAF_'
+			WHEN cont.financialprogramid IN (82,148) THEN 'ppfa.ea_PAC_'
+			WHEN cont.financialprogramid IN (77,147,150) THEN 'ppfa.ea_VOTES_'
 			ELSE cont.financialprogramid::text 
 			END
 		) AS filetype
@@ -61,16 +41,17 @@ CONVERT_TIMEZONE('US/Eastern', getdate()) AS insertdate
 	/* financialprogramid translation
 1	Planned Parenthood Federation of America	
 83	Planned Parenthood Federation of America - C3
-145	PPFA Direct Mail C3
-146	PPFA Direct Mail C4
-147	High Touch Votes
-144	High Touch C4
-148	High Touch PAC
 143	High Touch C3	
-84	Planned Parenthood Action Fund - C4
+145	PPFA Direct Mail C3
 7	Action Fund C4
+84	Planned Parenthood Action Fund - C4
+144	High Touch C4
+146	PPFA Direct Mail C4
 82  Planned Parenthood Federal PAC
-77  PP Votes
+148	High Touch PAC
+147	High Touch Votes
+150 PP Votes
+77  zzzPP Votes
 78 PPFA PMG
 */
 
@@ -87,6 +68,7 @@ CONVERT_TIMEZONE('US/Eastern', getdate()) AS insertdate
 							WHEN (
 									cont.onlineformname iLIKE '%\\_DIRECTED\\_%'
 									OR right(cont.marketsource, 1) = 'D'
+                	OR cont.affiliatepercentage = '90'
 									)
 								THEN 
 									(
@@ -117,7 +99,7 @@ CONVERT_TIMEZONE('US/Eastern', getdate()) AS insertdate
 	/* station support */ 
 	/*pull in directed gift ids from ms subquery, use custom fields for home affiliate code. */
 (case when cont.financialprogramid IN (1,83,143,145) then
- (case when cont.onlineformname iLIKE '%\\_DIRECTED\\_%' OR right(cont.marketsource, 1) = 'D' then cont.affiliateid 
+ (case when cont.onlineformname iLIKE '%\\_DIRECTED\\_%' OR right(cont.marketsource, 1) = 'D' OR cont.affiliatepercentage = '90' then cont.affiliateid 
  when right(cont.marketsource, 1) <> 'D' then
  (case when coalesce(cont.affiliateid, ccf.affiliatecode) is not null then coalesce(cont.affiliateid, '0'||left(ccf.affiliatecode,5))
  else '999999' end) 
@@ -232,6 +214,7 @@ FROM (
 		,gifts.occupationname
 		,gifts.employername
 		,gifts.creditaccount
+  	,gifts.affiliatepercentage
 		,(
 			CASE 
 				WHEN gifts.marketsource IS NOT NULL
@@ -274,7 +257,8 @@ FROM (
 			,contr.occupationname
 			,contr.employername
 			,contr.creditaccount
-			,coalesce(contr.market_source, forms.marketsource) AS marketsource
+    	,contr.affiliatepercentage
+			,coalesce(contr.salesforcecode, forms.marketsource) AS marketsource
 			,coalesce(contr.affiliateid, forms.onlineformresponsename) AS affiliateid
 			,forms.onlineformname
 			,forms.onlineformresponsename
@@ -289,15 +273,15 @@ FROM (
 				,cc.occupationname
 				,cc.employername
 				,crc.contactsrecurringcontributionid
-				,msc.market_source
+				,coalesce(cu.salesforcecode,msc.market_source) as salesforcecode --incorporating SF code custom field
 				,cu.affiliateid
 				,cu.creditaccount
+      	,cu.affiliatepercentage
 				,coalesce(crc.contactsonlineformid, cc.contactsonlineformid) AS contactsonlineformid
 				,coalesce(crc.defaultpaymenttypeid, cc.paymenttypeid) AS paymenttypeid
 			FROM vansync.ppfa_contactscontributions_mym cc
 			LEFT JOIN vansync.ppfa_contactsrecurringcontributions_mym crc using (contactsrecurringcontributionid)
-			LEFT JOIN anneramirez.marketsource_correction msc ON msc.recurring_commitment_id = crc.
-				contactsrecurringcontributionid --hopefully temporary until we get this field fixed
+			LEFT JOIN anneramirez.marketsource_correction msc ON msc.recurring_commitment_id = crc.contactsrecurringcontributionid --hopefully temporary until we get this field fixed
 			LEFT JOIN vansync.ppfa_customfields cu ON cc.contactscontributionid = cu.contactscontributionid
 			WHERE cc.contributionstatusid NOT IN ('4')
 				AND cc.datecanceled IS NULL
@@ -307,8 +291,9 @@ FROM (
 					,9816
 					,72219
 					,72220
-					,68255
+					,68255 --PAC
 					,65351 --PPVotes, replace when new data share committee is created
+          ,74821 --New PPVotes
           ,65401 --PMG - remove once sustainers are migrated
 					) 
 			) contr
@@ -363,11 +348,12 @@ WHERE cont.committeeid IN (
 		,72219
 		,72220
 		,68255
+    ,74821
 		,65351 --PPVotes, replace when new data share committee is created
-  ,65401 --PMG - remove once sustainers are migrated
+    ,65401 --PMG - remove once sustainers are migrated
 		)
 	AND cont.datereceived::date >= '2018-07-01'
-  and cont.datereceived::date < CONVERT_TIMEZONE('US/Eastern', getdate());
+  and cont.datereceived::date < current_date;
   
 begin transaction;
 
