@@ -9,7 +9,7 @@ import os
 update_from = os.environ.get('update_from')
 update_to = os.environ.get('update_to')
 user = os.environ.get('MC_CREDENTIAL_USERNAME')
-pw = = os.environ.get('MC_CREDENTIAL_PASSWORD')
+pw = os.environ.get('MC_CREDENTIAL_PASSWORD')
 company = os.environ.get('company_key')
 
 ### VAR Global ###
