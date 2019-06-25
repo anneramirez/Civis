@@ -119,8 +119,8 @@ dfC = pd.DataFrame(dataClick)
   
 ### Dataframe to Civis ###
 client = civis.APIClient()
-civis.io.dataframe_to_civis(dfP, 'redshift-ppfa', profiles_table, existing_table_rows='append', distkey='id')
-civis.io.dataframe_to_civis(dfC, 'redshift-ppfa', clicks_table, existing_table_rows='append', distkey='id')
+civis.io.dataframe_to_civis(dfP, 'redshift-ppfa', profiles_table, existing_table_rows='drop', distkey='id')
+civis.io.dataframe_to_civis(dfC, 'redshift-ppfa', clicks_table, existing_table_rows='drop', distkey='id')
 
 countP=len(dfP)
 countC=len(dfC)
