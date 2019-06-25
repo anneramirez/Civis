@@ -108,7 +108,7 @@ def loopPages(url,auth,params):
 dataPro, dataClick = loopPages(url,auth,params)  
 
 dfP = pd.DataFrame(dataPro)
-dfC = pd.DataFrame(dataClicks)
+dfC = pd.DataFrame(dataClick)
   
 ### Dataframe to Civis ###
 client = civis.APIClient()
