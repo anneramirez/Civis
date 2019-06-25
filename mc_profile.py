@@ -18,11 +18,7 @@ company_key = os.environ.get('company_key')
 profiles_table = os.environ.get('profiles_table')
 clicks_table = os.environ.get('clicks_table')
 
-
-
 ### VAR Global ###
-#user = "anne.ramirez+civisapi@ppfa.org"
-#pw = "q0QnWX3Z5Pki"
 auth = HTTPBasicAuth(user,pw)
 url = "https://secure.mcommons.com/api/profiles"
 
@@ -91,7 +87,7 @@ obj = 'profile'
 def loopPages(url,auth,params): 
     recordsPro = []
     recordsSub = []
-    while params['page'] < 3: #change to while True when done testing!!
+    while True: #change to while True when done testing!!
         try:
             resp = getAPIdata(url,auth,params)
             tree = processXML(resp)
