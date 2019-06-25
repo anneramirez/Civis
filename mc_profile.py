@@ -115,4 +115,5 @@ client = civis.APIClient()
 civis.io.dataframe_to_civis(dfP, 'redshift-ppfa', 'anneramirez.mc_action_profiles', existing_table_rows='append', distkey='id')
 civis.io.dataframe_to_civis(dfC, 'redshift-ppfa', 'anneramirez.mc_action_clicks', existing_table_rows='append', distkey='id')
 
-print("Success!")
+countPro = int(tree['response']['profiles']['num'])*int(tree['response']['profiles']['page'])
+print(str(countPro) + " profiles added to table")
