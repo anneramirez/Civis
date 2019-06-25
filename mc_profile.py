@@ -5,12 +5,20 @@ import json
 from requests.auth import HTTPBasicAuth
 import pandas as pd
 import os
+import datetime
 
-update_from = os.environ.get('update_from')
-update_to = os.environ.get('update_to')
+today = datetime.date.today()
+yesterday = today - datetime.timedelta(days = 1)
+update_from = str(yesterday)+" 00:00:00 UTC"
+update_to = str(yesterday)+" 23:59:59 UTC"
+
 user = os.environ.get('MC_CREDENTIAL_USERNAME')
 pw = os.environ.get('MC_CREDENTIAL_PASSWORD')
 company_key = os.environ.get('company_key')
+profiles_table = os.environ.get('profiles_table')
+clicks_table = os.environ.get('clicks_table')
+
+
 
 ### VAR Global ###
 #user = "anne.ramirez+civisapi@ppfa.org"
@@ -111,8 +119,8 @@ dfC = pd.DataFrame(dataClick)
   
 ### Dataframe to Civis ###
 client = civis.APIClient()
-civis.io.dataframe_to_civis(dfP, 'redshift-ppfa', 'anneramirez.mc_action_profiles', existing_table_rows='append', distkey='id')
-civis.io.dataframe_to_civis(dfC, 'redshift-ppfa', 'anneramirez.mc_action_clicks', existing_table_rows='append', distkey='id')
+civis.io.dataframe_to_civis(dfP, 'redshift-ppfa', profiles_table, existing_table_rows='append', distkey='id')
+civis.io.dataframe_to_civis(dfC, 'redshift-ppfa', clicks_table, existing_table_rows='append', distkey='id')
 
 countP=len(dfP)
 countC=len(dfC)
