@@ -8,10 +8,13 @@ import os
 
 update_from = os.environ.get('update_from')
 update_to = os.environ.get('update_to')
+user = os.environ.get('MC_CREDENTIAL_USERNAME')
+pw = = os.environ.get('MC_CREDENTIAL_PASSWORD')
+company = os.environ.get('company_key')
 
 ### VAR Global ###
-user = "anne.ramirez+civisapi@ppfa.org"
-pw = "q0QnWX3Z5Pki"
+#user = "anne.ramirez+civisapi@ppfa.org"
+#pw = "q0QnWX3Z5Pki"
 auth = HTTPBasicAuth(user,pw)
 url = "https://secure.mcommons.com/api/profiles"
 
@@ -21,7 +24,8 @@ params = {'include_custom_columns':'false',
                     'include_members':'false',
                     'page':1,
                     'from':update_from,
-                    'to':update_to
+                    'to':update_to,
+          'company':company_key
                   }
                   
 ### API Call ###
@@ -100,3 +104,15 @@ def loopPages(url,auth,params):
             break
     params['page'] = 1
     return recordsPro, recordsSub  
+
+dataPro, dataClick = loopPages(url,auth,params)  
+
+dfP = pd.DataFrame(dataPro)
+dfC = pd.DataFrame(dataClicks)
+  
+### Dataframe to Civis ###
+client = civis.APIClient()
+civis.io.dataframe_to_civis(dfP, 'redshift-ppfa', 'anneramirez.mc_action_profiles', existing_table_rows='append', distkey='id')
+civis.io.dataframe_to_civis(dfC, 'redshift-ppfa', 'anneramirez.mc_action_clicks', existing_table_rows='append', distkey='id')
+
+print("Success!")
