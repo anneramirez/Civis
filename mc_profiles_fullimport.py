@@ -10,7 +10,7 @@ import datetime
 today = datetime.date.today()
 yesterday = today - datetime.timedelta(days = 1)
 update_from = str(yesterday)+" 00:00:00 UTC"
-update_to = "2019-06-29 23:59:59 UTC"
+
 
 user = os.environ.get('MC_CREDENTIAL_USERNAME')
 pw = os.environ.get('MC_CREDENTIAL_PASSWORD')
@@ -27,7 +27,8 @@ params = {'include_custom_columns':'false',
                     'include_clicks':'true',
                     'include_members':'false',
                     'page':1,
-                    'to':update_to,
+                    'to':'2019-06-29 23:59:59 UTC',
+          'from':'2019-01-00 00:00:00 UTC',
           'company':company_key
                   }
                   
