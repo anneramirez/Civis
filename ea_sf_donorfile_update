@@ -12,7 +12,7 @@ c.suffix,
 coalesce(addr.addressline1,addr.vaddress) as addressline1,
 (case when addr.addressline1 IS NOT NULL THEN addr.addressline2 else null end) as addressline2,
 addr.city as city,
-coalesce(addr.state,addr.provincename) as state_province, --maybe change this to case when based on country?
+coalesce(addr.state,addr.provincename) as state_province, 
 coalesce(addr.zip5,addr.postalcode) as zip_postal,
 addr.zip4,
 addr.countrycode,
@@ -30,7 +30,7 @@ inner JOIN (SELECT DISTINCT
                RANK ()
                OVER (PARTITION BY vanid ORDER BY datecreated DESC, random()) as rank
                FROM vansync.ppfa_contactscontributions_mym
-			   			where committeeid in (11607,9816,72219,72220,68255,65351,65401)) a
+			   			where committeeid in (11607,9816,72219,72220,68255,65351,65401,74821)) a
              WHERE rank='1'
            ) cc
 USING (vanid)
@@ -42,7 +42,7 @@ LEFT JOIN (SELECT DISTINCT
                OVER (PARTITION BY vanid ORDER BY datemodified DESC, coalesce(vaddress,addressline1) desc, random()) as rank
                FROM vansync.ppfa_contactsaddresses_mym
 			   where coalesce(vaddress,addressline1) is not null
-         and length(coalesce(vaddress,addressline1))>0
+         and length(coalesce(vaddress,addressline1))>3
 			   and city is not null
 			   and coalesce(state,provincename) is not null
 			   and coalesce(zip5,postalcode) is not null
@@ -74,7 +74,7 @@ LEFT JOIN (SELECT DISTINCT
              WHERE rank='1'
            ) ph
 USING (vanid)
-where ((cc.datecreated::date=current_date-1) OR (c.datemodified::date=current_date-1) OR (addr.datemodified::date=current_date-1) OR (em.datemodified::date=current_date-1) OR (ph.datemodified::date=current_date-1))
+where ((cc.datecreated::date=current_date-1) OR (c.datemodified::date=current_date-1) OR (addr.datemodified::date=current_date-1) OR (em.datemodified::date=current_date-1) OR (em.suppressed::date=current_date-1) OR (ph.datemodified::date=current_date-1) OR (ph.datesuppressed::date=current_date-1))
 ;
 
 /* remove old outdated rows */
