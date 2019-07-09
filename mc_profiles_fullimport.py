@@ -28,7 +28,7 @@ params = {'include_custom_columns':'false',
                     'include_members':'false',
                     'page':1,
                     'to':'2019-06-29 23:59:59 UTC',
-          'from':'2019-01-00 00:00:00 UTC',
+          'from':'2019-01-01 00:00:00 UTC',
           'company':company_key
                   }
                   
