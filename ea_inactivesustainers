@@ -1,25 +1,46 @@
-select
+select 
+id,
+Rc_Bios__End_Date,
+Rc_Bios__Active,
+Rc_Bios__Comments
+
+/* NOT VERY ELEGANT ANNE TRY HARDER */
+from (select
 pref.id,
 coalesce(crc.datecancelled::date,fail.datereceived::date) as "Rc_Bios__End_Date",
 'FALSE' as "Rc_Bios__Active",
 (case when crc.recurringcontributionstatusname='Inactive--Failed' then 'Preference closed due to excessive failures in EveryAction'
-when crc.recurringcontributionstatusname='Inactive--Cancelled' then 'Online classification closed due to termination' else null end) as "Rc_Bios__Comments"
+when crc.recurringcontributionstatusname='Inactive--Cancelled' then 'Online classification closed due to termination' else null end) as "Rc_Bios__Comments",
+crc.vanid,
+alt.accountx,
+crc.entity as ea_gift_entity,
+pref.entity as rd_pref_entity,
+row_number() over (partition by pref.id order by coalesce(crc.datecancelled::date,fail.datereceived::date) desc) as rownumber --eliminating duplicates if a supporter had two gifts fail/cancel in the same month, try incorporating into crc table instead
 
 from 
 /* EA inactive sustaining gifts, excluding donors with still active gifts */
-(select a.vanid, a.contactsrecurringcontributionid, a.datecancelled, b.recurringcontributionstatusname
- from vansync.ppfa_contactsrecurringcontributions_mym a
+(select a.vanid, a.contactsrecurringcontributionid, a.datecancelled, b.recurringcontributionstatusname, a.entity
+ from 
+ --find all inactive sustaining gifts
+ (select *, (case when financialprogramid IN (1,83,143,145,78) THEN 'c3'
+									WHEN financialprogramid IN (7,84,144,146) then 'c4' else null end) as entity
+       from vansync.ppfa_contactsrecurringcontributions_mym) a
+ --look up gift status translation
  inner join vansync.ppfa_recurringcontributionstatuses b using (recurringcontributionstatusid)
  left join
- (select * from vansync.ppfa_contactsrecurringcontributions_mym 
-  where recurringcontributionstatusid in (1,5)
-and committeeid in (11607,9816,72220,72219)) c on a.vanid=c.vanid
- where a.recurringcontributionstatusid in (2,4)
- and a.committeeid in (11607,9816,72220,72219)
-and c.vanid is null) crc
+ --find all records that have an active gift to the same entity
+ 	(select *,(case when financialprogramid IN (1,83,143,145,78) THEN 'c3'
+									WHEN financialprogramid IN (7,84,144,146) then 'c4' else null end) as entity 
+   from vansync.ppfa_contactsrecurringcontributions_mym 
+  	where recurringcontributionstatusid in (1,5) --active,failing
+		and committeeid in (11607,9816,72220,72219)) c on a.vanid=c.vanid and a.entity=c.entity
+ where a.recurringcontributionstatusid in (2,4) --cancelled,failed
+ and a.committeeid in (11607,9816,72220,72219) 
+ and c.vanid is null --exclude records with an active gift - preference should stay open
+) crc
 
 /* get date of most recent failed installment */
-inner join 
+left join 
 (SELECT *
 FROM (select contactsrecurringcontributionid, datereceived, row_number() OVER (PARTITION BY contactsrecurringcontributionid ORDER BY datereceived desc) as rownumber
 from vansync.ppfa_contactscontributions_mym
@@ -32,10 +53,19 @@ inner join
 
 /* rD preference */
 inner join
-(select id, rc_bios__account from rounddata.rc_bios__preference 
+(select 
+ id, 
+ rc_bios__account, 
+ rc_bios__start_date,
+ (case when rc_bios__code_value='SUS NL C3 ONLINE' then 'c3' 
+  when rc_bios__code_value='SUS NL C4 ONLINE' then 'c4' else null end) as entity 
+ from rounddata.rc_bios__preference 
 where rc_bios__code_value in ('SUS NL C3 ONLINE','SUS NL C4 ONLINE')
 and rc_bios__active='true'
-and delete_flag<>'Y') pref on pref.rc_bios__account=alt.accountx
+and delete_flag<>'Y') pref on pref.rc_bios__account=alt.accountx and pref.entity=crc.entity --make sure inactive gift matches preference
 
 /* only pull newly inactive gifts from last month */
 where date_part(month, coalesce(crc.datecancelled::date,fail.datereceived::date))= (date_part(month,current_date)-1)
+and coalesce(crc.datecancelled::date,fail.datereceived::date) > pref.rc_bios__start_date::date
+) 
+where rownumber=1
