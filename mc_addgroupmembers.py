@@ -22,15 +22,19 @@ url='https://secure.mcommons.com/api/add_group_member'
 ### Query Civis ###
 client = civis.APIClient()
 
-d=civis.io.read_civis(db_table, 'redshift-ppfa') #anneramirez.mc_test for testing
-phone_string=(",".join(str(v) for n in d[1:] for v in n))
-params['phone_number'] = phone_string
+data=civis.io.read_civis(db_table, 'redshift-ppfa') #anneramirez.mc_test for testing
 
 def getAPIdata(url,auth,params):
     resp = requests.get(url, auth=auth, params=params)
     return resp 
 
-r = getAPIdata(url,auth,params)
-
-print(r)
-print(params)
+### Chunks of 200 ###
+b=1
+e=200
+while b<=len(d):
+    phone_string=(",".join(str(v) for n in d[b:e] for v in n))
+    params['phone_number'] = phone_string
+    r = getAPIdata(url,auth,params)
+    b+=200
+    e+=200
+print('Pushed ',e,' phones to MC group ',group_id,' - ',r)
