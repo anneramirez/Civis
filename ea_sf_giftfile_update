@@ -68,7 +68,7 @@ CONVERT_TIMEZONE('US/Eastern', getdate()) AS insertdate
 							WHEN (
 									cont.onlineformname iLIKE '%\\_DIRECTED\\_%'
 									OR right(cont.marketsource, 1) = 'D'
-                	OR cont.affiliatepercentage = '90'
+                	OR cont.affiliatepercentage in ('100.00','90.00','0.00')
 									)
 								THEN 
 									(
@@ -99,7 +99,7 @@ CONVERT_TIMEZONE('US/Eastern', getdate()) AS insertdate
 	/* station support */ 
 	/*pull in directed gift ids from ms subquery, use custom fields for home affiliate code. */
 (case when cont.financialprogramid IN (1,83,143,145) then
- (case when cont.onlineformname iLIKE '%\\_DIRECTED\\_%' OR right(cont.marketsource, 1) = 'D' OR cont.affiliatepercentage = '90' then cont.affiliateid 
+ (case when cont.onlineformname iLIKE '%\\_DIRECTED\\_%' OR right(cont.marketsource, 1) = 'D' OR cont.affiliatepercentage in ('100.00','90.00','0.00') then cont.affiliateid 
  when right(cont.marketsource, 1) <> 'D' then
  (case when coalesce(cont.affiliateid, ccf.affiliatecode) is not null then coalesce(cont.affiliateid, '0'||left(ccf.affiliatecode,5))
  else '999999' end) 
@@ -224,17 +224,17 @@ FROM (
 						1
 						,83
 						)
-					THEN '3NALz1900W1N1N' /*PPFA 11607*/
+					THEN '3NALz2000W1N1N' /*PPFA 11607*/
          when gifts.financialprogramid IN (
 						7
 						,84
 						)
-					THEN '4NALz1900W1N1A' /*PPAF 9816*/
-          when gifts.financialprogramid = 143 then '3NADD1900W1N07' /*High Touch C3*/
-					when gifts.financialprogramid = 144 then '4NADD1900W1N07' /*High Touch C4*/
-          when gifts.financialprogramid = 145 then '3NALA1900W2NMT' /*Direct Mail C3*/
-					when gifts.financialprogramid = 146 then '4NALA1900W1NMT' /*Direct Mail C4*/
-          when gifts.financialprogramid in (82,148) then '5NAM51900W1NMG' /*High Touch PAC*/ /*Using as default for now*/
+					THEN '4NALz2000W1N1A' /*PPAF 9816*/
+          when gifts.financialprogramid = 143 then '3NADD2000W1N07' /*High Touch C3*/
+					when gifts.financialprogramid = 144 then '4NADD2000W1N07' /*High Touch C4*/
+          when gifts.financialprogramid = 145 then '3NALA2000W2NMT' /*Direct Mail C3*/
+					when gifts.financialprogramid = 146 then '4NALA2000W1NMT' /*Direct Mail C4*/
+          when gifts.financialprogramid in (82,148) then '5NAM52000W1NMG' /*High Touch PAC*/ /*Using as default for now*/
           when gifts.financialprogramid in (77,147) then '4NVMD1900W1NMG' /*High Touch Votes*/ /*Using as default for now*/
            else null end)
 				ELSE NULL
@@ -361,7 +361,7 @@ begin transaction;
 delete from anneramirez.ea_sf_giftfile
 using giftfile_update 
 where ea_sf_giftfile.contactscontributionid=giftfile_update.contactscontributionid
-and giftfile_update.contactscontributionid in (select distinct contactscontributionid from anneramirez.ea_sf_exceptions);
+and giftfile_update.contactscontributionid in (select distinct contactscontributionid from anneramirez.ea_sf_exceptions where exception_reason not in ('likelytest','refunded'));
 
 /* insert new and updated rows */
 insert into anneramirez.ea_sf_giftfile
