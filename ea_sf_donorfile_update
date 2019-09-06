@@ -3,7 +3,7 @@ create temp table donorfile_update (like anneramirez.ea_sf_donorfile);
 insert into donorfile_update
 SELECT 
 c.vanid,
-c.title, 
+(case when c.title in (select sf_title from anneramirez.ea_sf_titles) then c.title else null end) as title, 
 c.firstname,
 c.middlename,
 c.lastname,
@@ -74,7 +74,7 @@ LEFT JOIN (SELECT DISTINCT
              WHERE rank='1'
            ) ph
 USING (vanid)
-where ((cc.datecreated::date=current_date-1) OR (c.datemodified::date=current_date-1) OR (addr.datemodified::date=current_date-1) OR (em.datemodified::date=current_date-1) OR (em.suppressed::date=current_date-1) OR (ph.datemodified::date=current_date-1) OR (ph.datesuppressed::date=current_date-1))
+where ((cc.datecreated::date=current_date-1) OR (c.datemodified::date=current_date-1) OR (addr.datemodified::date=current_date-1) OR (addr.datesuppressed::date=current_date-1) OR (em.datemodified::date=current_date-1) OR (em.datesuppressed::date=current_date-1) OR (ph.datemodified::date=current_date-1) OR (ph.datesuppressed::date=current_date-1))
 ;
 
 /* remove old outdated rows */
