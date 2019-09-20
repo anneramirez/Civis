@@ -1,0 +1,52 @@
+create table anneramirez.golden_phones_eavan as
+SELECT
+p.phone as phone_number,
+(case when p.iscellstatusid=1 then 'verified_cell'
+ when p.iscellstatusid=2 then 'likely_cell'
+ when p.phonetypeid='C' then 'likely_cell'
+ else 'unknown' end) as phone_type,
+c.vanid,
+email.email as email,
+c.firstname as first_name,
+c.lastname as last_name,
+addr.addressline1 as street1,
+addr.addressline2 as street2,
+addr.city as city,
+coalesce(addr.state,addr.provincename) as state,
+coalesce(addr.zip5,addr.postalcode) as postal_code,
+addr.countrycode as country,
+cpa.phoneoptinstatusname as "c3_cell_status",
+cpa.datecreated as "c3_status_date",
+cpb.phoneoptinstatusname as "c4_cell_status",
+cpb.datecreated as "c4_status_date",
+cpc.phoneoptinstatusname as "votes_cell_status",
+cpc.datecreated as "votes_status_date",
+csr.surveyresponsename as "contact_status",
+csr.responsedate as "contact_status_date",
+(case when c.vanid in (select distinct vanid from vansync.ppfa_contactsactivistcodes_mym where activistcodeid = 4132411) then true else null end) as "C4 Opt-In",
+(case when c.vanid in (select distinct vanid from vansync.ppfa_contactsactivistcodes_mym where activistcodeid = 4475017) then true else null end) as "Votes Opt-In"
+
+from
+vansync.ppfa_contactsphones_mym p
+
+--phone level opt-in capture 
+LEFT JOIN (select distinct contactsphoneid, phoneoptinstatusname, a.datecreated from vansync.ppfa_contactsphonescommitteesoptins_mym a inner join vansync.ppfa_phoneoptinstatuses b using (phoneoptinstatusid) where committeeid = 11607 and a.phoneoptinstatusid<>2) cpa ON cpa.contactsphoneid = p.contactsphoneid --remove unknown status b/c who cares
+LEFT JOIN (select distinct contactsphoneid, phoneoptinstatusname, a.datecreated from vansync.ppfa_contactsphonescommitteesoptins_mym a inner join vansync.ppfa_phoneoptinstatuses b using (phoneoptinstatusid) where committeeid = 9816 and a.phoneoptinstatusid<>2) cpb ON cpb.contactsphoneid = p.contactsphoneid
+LEFT JOIN (select distinct contactsphoneid, phoneoptinstatusname, a.datecreated from vansync.ppfa_contactsphonescommitteesoptins_mym a inner join vansync.ppfa_phoneoptinstatuses b using (phoneoptinstatusid) where committeeid = 74821 and a.phoneoptinstatusid<>2) cpc ON cpc.contactsphoneid = p.contactsphoneid
+
+--survey question opt-in capture
+left JOIN (select distinct a.vanid, max(coalesce(a.datecanvassed,a.datecreated)) as responsedate, b.surveyresponsename from vansync.ppfa_contactssurveyresponses_mym a inner join vansync.ppfa_surveyresponses b using (surveyresponseid) where a.surveyquestionid IN (165743, 165741) group by vanid, surveyresponsename) csr ON csr.vanid = p.vanid
+
+ --contact info
+left join vansync.ppfa_contacts_mym_cont c on c.phoneid=p.contactsphoneid
+
+--address - we can get more complicated with this later
+LEFT JOIN (select * from vansync.ppfa_contactsaddresses_mym  where datesuppressed is null) addr
+  ON addr.contactsaddressid = c.vaddressid
+  
+--email
+LEFT JOIN (select * from vansync.ppfa_contactsemails_mym where datesuppressed is null) email
+  ON email.contactsemailid = c.emailid
+where p.datesuppressed is null --not deleted
+and (p.phonetypeid='C' or p.iscellstatusid in (1,2,3)) --cells, likely cells, or unknown
+and coalesce(cpa.phoneoptinstatusname,cpb.phoneoptinstatusname,cpc.phoneoptinstatusname,csr.surveyresponsename) is not null
