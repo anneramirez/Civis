@@ -90,7 +90,8 @@ CONVERT_TIMEZONE('US/Eastern', getdate()) AS insertdate
 								when cont.financialprogramid = 143 then 'C340015UR422MLS'
 								when cont.financialprogramid = 144 then 'C440015UR422MLS'
                 when cont.financialprogramid in (82,148) then 'PC40225TR480PMG'
-                when cont.financialprogramid in (77,147) then 'PV40225TR480PMG'
+                when cont.financialprogramid in (147) then 'PV40225TR480PMG'
+        				when cont.financialprogramid in (77,150) then 'PV40100TR422ONL'
 								else null end) 
 			ELSE NULL
 			END
@@ -235,7 +236,8 @@ FROM (
           when gifts.financialprogramid = 145 then '3NALA2000W2NMT' /*Direct Mail C3*/
 					when gifts.financialprogramid = 146 then '4NALA2000W1NMT' /*Direct Mail C4*/
           when gifts.financialprogramid in (82,148) then '5NAM52000W1NMG' /*High Touch PAC*/ /*Using as default for now*/
-          when gifts.financialprogramid in (77,147) then '4NVMD1900W1NMG' /*High Touch Votes*/ /*Using as default for now*/
+          when gifts.financialprogramid in (147) then '4NVMD1900W1NMG' /*High Touch Votes*/
+          when gifts.financialprogramid in (77,150) then '4NVLD2000W1N1A' /*Votes 74821*/ /*77 is old ppv can probs remove*/
            else null end)
 				ELSE NULL
 				END
@@ -348,7 +350,7 @@ WHERE cont.committeeid IN (
 		,72219
 		,72220
 		,68255
-    ,74821
+    ,74821 --PPVotes
 		,65351 --PPVotes, replace when new data share committee is created
     ,65401 --PMG - remove once sustainers are migrated
 		)
