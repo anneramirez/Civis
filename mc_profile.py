@@ -39,7 +39,7 @@ def getAPIdata(url,auth,params):
     return resp 
 
 def processXML(d):
-    tree = xmltodict.parse(d.content, attr_prefix='', cdata_key='v', dict_constructor=dict)
+    tree = xmltodict.parse(d.content, attr_prefix='', cdata_key='value', dict_constructor=dict)
     return tree
 
 ###Flatten###
