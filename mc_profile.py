@@ -96,7 +96,7 @@ def loopPages(url,auth,params):
             tree = processXML(resp)
             path = tree['response'][obj+'s'][obj]
             clicks = process_sublist(path,'click')
-            customs = process_sublist(path,'custom')
+            customs = process_sublist(path,'custom_column')
             recordsCli.extend(clicks)
             recordsCus.extend(customs)
             clean = cleanPro(path)
