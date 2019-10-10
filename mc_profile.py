@@ -17,12 +17,13 @@ pw = os.environ.get('MC_CREDENTIAL_PASSWORD')
 company_key = os.environ.get('company_key')
 profiles_table = os.environ.get('profiles_table')
 clicks_table = os.environ.get('clicks_table')
+customs_table = os.environ.get('customs_table')
 
 ### VAR Global ###
 auth = HTTPBasicAuth(user,pw)
 url = "https://secure.mcommons.com/api/profiles"
 
-params = {'include_custom_columns':'false',
+params = {'include_custom_columns':'true',
                    'include_subscriptions':'false',
                     'include_clicks':'true',
                     'include_members':'false',
@@ -38,7 +39,7 @@ def getAPIdata(url,auth,params):
     return resp 
 
 def processXML(d):
-    tree = xmltodict.parse(d.content, attr_prefix='', dict_constructor=dict)
+    tree = xmltodict.parse(d.content, attr_prefix='', cdata_key='v', dict_constructor=dict)
     return tree
 
 ###Flatten###
@@ -80,20 +81,24 @@ def process_sublist(t,obj):
 def cleanPro(path):
     for p in path:
         del(p['clicks'])
+        del(p['custom_columns'])
     return path
   
 ### PROFILES Loop through pages to get all results ###
 obj = 'profile'
 def loopPages(url,auth,params): 
     recordsPro = []
-    recordsSub = []
+    recordsCli = []
+    recordsCus = []
     while True: #change to while True when done testing!!
         try:
             resp = getAPIdata(url,auth,params)
             tree = processXML(resp)
             path = tree['response'][obj+'s'][obj]
             clicks = process_sublist(path,'click')
-            recordsSub.extend(clicks)
+            customs = process_sublist(path,'custom')
+            recordsCli.extend(clicks)
+            recordsCus.extend(customs)
             clean = cleanPro(path)
             r = flatXML(clean)
             recordsPro.extend(r)
@@ -106,20 +111,24 @@ def loopPages(url,auth,params):
         except:
             break
     params['page'] = 1
-    return recordsPro, recordsSub  
+    return recordsPro, recordsCli, recordsCus  
 
-dataPro, dataClick = loopPages(url,auth,params)  
+dataPro, dataClick, dataCustom = loopPages(url,auth,params)  
 
-dfP = pd.DataFrame(dataPro)
-dfC = pd.DataFrame(dataClick)
+dfPro = pd.DataFrame(dataPro)
+dfCli = pd.DataFrame(dataClick)
+dfCus = pd.DataFrame(dataCustom)
   
 ### Dataframe to Civis ###
 client = civis.APIClient()
-civis.io.dataframe_to_civis(dfP, 'redshift-ppfa', profiles_table, existing_table_rows='drop', distkey='id')
-civis.io.dataframe_to_civis(dfC, 'redshift-ppfa', clicks_table, existing_table_rows='drop', distkey='id')
+civis.io.dataframe_to_civis(dfPro, 'redshift-ppfa', profiles_table, existing_table_rows='drop', distkey='id')
+civis.io.dataframe_to_civis(dfCli, 'redshift-ppfa', clicks_table, existing_table_rows='drop', distkey='id')
+civis.io.dataframe_to_civis(dfCus, 'redshift-ppfa', customs_table, existing_table_rows='drop', distkey='profile_id')
 
-countP=len(dfP)
-countC=len(dfC)
+countP=len(dfPro)
+countCl=len(dfCli)
+countCu=len(dfCus)
 
 print(str(countP) + " profiles imported")
-print(str(countC) + " clicks imported")
+print(str(countCl) + " clicks imported")
+print(str(countCu) + " custom fields imported")
