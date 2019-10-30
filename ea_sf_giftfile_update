@@ -62,6 +62,8 @@ CONVERT_TIMEZONE('US/Eastern', getdate()) AS insertdate
 		CASE 
 			WHEN cont.committeeid = 9816
 				THEN 'C440100UR422ONL'
+    	WHEN cont.committeeid = 74821
+				THEN 'PV40100TR422ONL'
 			WHEN cont.committeeid = 11607
 				THEN (
 						CASE 
@@ -196,6 +198,13 @@ else null end) as affiliateid
 					,146
 					)
 				THEN 'C4 ONLINE'
+    	WHEN cont.contactsrecurringcontributionid IS NOT NULL
+				AND cont.financialprogramid::text IN (
+					77
+          ,147
+          ,150
+					)
+				THEN 'VOTES ONLINE'
 			ELSE NULL
 			END
 		) AS pref_code_2
