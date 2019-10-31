@@ -20,15 +20,16 @@ workflow:
       on-success:
         - ea_sf_exceptions_update_22210012
     ea_sf_exceptions_update_22210012:
+      join: all
       action: civis.run_job
       retry:
         count: 1
         delay: 120
       input:
         job_id: 22210012
-      join: all
       on-success:
         - ea_sf_donorgiftjoin_update_22000635
+        - ea_sf_exceptions_email_22451078
     ea_sf_donorgiftjoin_update_22000635:
       action: civis.run_job
       retry:
@@ -48,6 +49,7 @@ workflow:
       on-success:
         - Daily_File_Export_ea_C4_PPAF_22351589
         - Daily_File_Export___ea_C3_PPFA_22006132
+        - ea_sf_pacvotes_transactioncheck_22352860
     Daily_File_Export___ea_C3_PPFA_22006132:
       action: civis.run_job
       input:
@@ -61,7 +63,17 @@ workflow:
       on-success:
         - ea_sf_dailyfile_email_22030941
     ea_sf_dailyfile_email_22030941:
+      join: all
       action: civis.run_job
       input:
         job_id: 22030941
-      join: all
+    ea_sf_pacvotes_transactioncheck_22352860:
+      action: civis.run_job
+      input:
+        job_id: 22352860
+      on-success:
+        - ea_sf_dailyfile_email_22030941
+    ea_sf_exceptions_email_22451078:
+      action: civis.run_job
+      input:
+        job_id: 22451078
