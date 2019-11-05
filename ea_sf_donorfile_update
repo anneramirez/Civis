@@ -23,23 +23,37 @@ ph.phonetypeid
 /* *** SOURCE TABLES *** */
 FROM 
 vansync.ppfa_contacts_mym_cont c
+
 inner JOIN (SELECT DISTINCT
              *
              FROM (SELECT
                *,
-               RANK ()
-               OVER (PARTITION BY vanid ORDER BY datecreated DESC, random()) as rank
+               row_number() OVER (PARTITION BY vanid ORDER BY datecreated DESC, contactscontributionid) as rownum
                FROM vansync.ppfa_contactscontributions_mym
-			   			where committeeid in (11607,9816,72219,72220,68255,65351,65401,74821)) a
-             WHERE rank='1'
+			   			where committeeid in (11607,9816,72219,72220,68255,65351,65401,74821)) 
+             WHERE rownum=1
            ) cc
 USING (vanid)
-LEFT JOIN (SELECT DISTINCT
+
+LEFT JOIN (select
+           coalesce(cof.vanid,ca.vanid) as vanid,
+           ca.vaddress,
+           ca.provincename,
+           ca.postalcode,
+           ca.countrycode,
+           coalesce(cof.addressline1,ca.addressline1) as addressline1,
+           coalesce(cof.addressline2,ca.addressline2) as addressline2,
+           coalesce(cof.city,ca.city) as city,
+           coalesce(cof.state,ca.state) as state,
+           coalesce(cof.zip5,ca.zip5) as zip5,
+           coalesce(cof.zip4,ca.zip4) as zip4
+           from
+				(SELECT DISTINCT
              *
              FROM (SELECT
                *,
-               RANK ()
-               OVER (PARTITION BY vanid ORDER BY datemodified DESC, coalesce(vaddress,addressline1) desc, random()) as rank
+               row_number ()
+               OVER (PARTITION BY vanid ORDER BY contactsaddressid DESC) as rownum
                FROM vansync.ppfa_contactsaddresses_mym
 			   where coalesce(vaddress,addressline1) is not null
          and length(coalesce(vaddress,addressline1))>3
@@ -47,34 +61,55 @@ LEFT JOIN (SELECT DISTINCT
 			   and coalesce(state,provincename) is not null
 			   and coalesce(zip5,postalcode) is not null
          and datesuppressed is null
-			   ) a
-             WHERE rank='1'
-           ) addr --if any address field is null pulling in, don't send anything (unless new record); might have to pull new record info from gift file, not sure where else to get from
+			   					) a
+             WHERE rownum=1
+			) ca
+      full outer join 
+           (select distinct * from
+            (select *, row_number() over (partition by vanid order by contactsaddressid desc) as rownum
+             from
+      	(select distinct a.datecreated, a.vanid, b.contactsaddressid, b.addressline1,b.addressline2,b.city,coalesce(b.state,b.provincename) as state,coalesce(b.zip5,b.postalcode) as zip5, b.zip4
+ 				from
+ 					(select distinct * 
+  				from
+  					(select *, row_number () over (partition by vanid order by datecreated desc, contactsonlineformid desc) as rownum 
+   					from vansync.ppfa_contactsonlineforms_mym
+   					where submittedaddressline1 is not null
+        		) where rownum=1
+    			) a
+				left join vansync.ppfa_contactsaddresses_mym b on a.vanid=b.vanid
+				where upper(left(a.submittedaddressline1,5)) ilike upper(left(b.addressline1,5))
+				and b.datesuppressed is null
+         and a.datecreated>=current_date-180
+				))
+            where rownum=1) cof on ca.vanid=cof.vanid
+           ) addr 
+           --so: addresses on contactsonlineforms are not formatted. so we want to compare the date of the most recent form submission with full address info, to the date of the most recent address created on the record, and pull the most recent one - BUT if it's the onlineforms address, match it back to the address on the record and pull the properly formatted one. also we don't actually have datecreated on the contactsaddress table right now so i set 6mos as an arbitrary time period
 USING (vanid)
 LEFT JOIN (SELECT DISTINCT
              *
              FROM (SELECT
                *,
-               RANK ()
-               OVER (PARTITION BY vanid ORDER BY preferredemail desc, datemodified DESC, datecreated desc, random()) as rank
+               row_number ()
+               OVER (PARTITION BY vanid ORDER BY preferredemail desc, datecreated desc, contactsemailid desc) as rownum
                FROM vansync.ppfa_contactsemails_mym
 			   where datesuppressed is null) a
-             WHERE rank='1'
+             WHERE rownum=1
            ) em
 USING (vanid)
 LEFT JOIN (SELECT DISTINCT
              *
              FROM (SELECT
                *,
-               RANK ()
-               OVER (PARTITION BY vanid ORDER BY datemodified DESC, random()) as rank
+               row_number ()
+               OVER (PARTITION BY vanid ORDER BY preferredphone desc,datecreated desc, contactsphoneid desc) as rownum
                FROM vansync.ppfa_contactsphones_mym
 			   where datesuppressed is null
 			   and phonetypeid='H') a
-             WHERE rank='1'
+             WHERE rownum=1
            ) ph
 USING (vanid)
-where ((cc.datecreated::date=current_date-1) OR (c.datemodified::date=current_date-1) OR (addr.datemodified::date=current_date-1) OR (addr.datesuppressed::date=current_date-1) OR (em.datemodified::date=current_date-1) OR (em.datesuppressed::date=current_date-1) OR (ph.datemodified::date=current_date-1) OR (ph.datesuppressed::date=current_date-1))
+where ((cc.datecreated::date=current_date-1) OR (c.datemodified::date=current_date-1) OR (c.vanid in (select distinct vanid from anneramirez.ea_sf_giftfile) and c.vanid not in (select vanid from anneramirez.donorfile_updatetest)))
 ;
 
 /* remove old outdated rows */
@@ -82,9 +117,7 @@ begin transaction;
 
 delete from anneramirez.ea_sf_donorfile
 using donorfile_update 
-where ea_sf_donorfile.vanid=donorfile_update.vanid
-and ea_sf_donorfile.addressline1<>donorfile_update.addressline1
-and donorfile_update.addressline1 is not null; 
+where ea_sf_donorfile.vanid=donorfile_update.vanid; 
 
 /* insert new and updated rows */
 insert into anneramirez.ea_sf_donorfile
