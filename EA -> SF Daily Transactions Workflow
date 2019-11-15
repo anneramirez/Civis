@@ -16,9 +16,6 @@ workflow:
     ea_sf_exceptions_update_22210012:
       join: all
       action: civis.run_job
-      retry:
-        count: 1
-        delay: 120
       input:
         job_id: 22210012
       on-success:
@@ -26,18 +23,12 @@ workflow:
         - ea_sf_exceptions_email_22451078
     ea_sf_donorgiftjoin_update_22000635:
       action: civis.run_job
-      retry:
-        count: 1
-        delay: 120
       input:
         job_id: 22000635
       on-success:
         - Update_Counts_22349322
     Update_Counts_22349322:
       action: civis.run_job
-      retry:
-        count: 1
-        delay: 120
       input:
         job_id: 22349322
       on-success:
