@@ -28,9 +28,7 @@ CONVERT_TIMEZONE('US/Eastern', getdate()) AS insertdate
 	,
 	/* file type */
 	(CASE 
-   		WHEN cont.financialprogramid IN (1,83,143,145
-        ,78  --PMG - remove once sustainers are migrated
-					) THEN 'ppfa.ea_C3_PPFA_'
+   		WHEN cont.financialprogramid IN (1,83,143,145) THEN 'ppfa.ea_C3_PPFA_'
 			WHEN cont.financialprogramid IN (7,84,144,146) THEN 'ppfa.ea_C4_PPAF_'
 			WHEN cont.financialprogramid IN (82,148) THEN 'ppfa.ea_PAC_'
 			WHEN cont.financialprogramid IN (77,147,150) THEN 'ppfa.ea_VOTES_'
@@ -187,7 +185,6 @@ else null end) as affiliateid
 					,83
 					,143
 					,145
-          ,78 --PMG - remove once sustainers are migrated
 					)
 				THEN 'C3 ONLINE'
 			WHEN cont.contactsrecurringcontributionid IS NOT NULL
@@ -305,7 +302,6 @@ FROM (
 					,68255 --PAC
 					,65351 --PPVotes, replace when new data share committee is created
           ,74821 --New PPVotes
-          ,65401 --PMG - remove once sustainers are migrated
 					) 
 			) contr
 		LEFT JOIN (
@@ -361,9 +357,8 @@ WHERE cont.committeeid IN (
 		,68255
     ,74821 --PPVotes
 		,65351 --PPVotes, replace when new data share committee is created
-    ,65401 --PMG - remove once sustainers are migrated
 		)
-	AND cont.datereceived::date >= '2018-07-01'
+	AND cont.datereceived::date >= '2019-07-01'
   and cont.datereceived::date < current_date;
   
 begin transaction;
