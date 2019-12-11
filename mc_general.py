@@ -16,16 +16,15 @@ user = os.environ.get('MC_CREDENTIAL_USERNAME')
 pw = os.environ.get('MC_CREDENTIAL_PASSWORD')
 company_key = os.environ.get('company_key')
 endpoint = os.environ.get('endpoint')
-profiles_table = os.environ.get('profiles_table')
-clicks_table = os.environ.get('clicks_table')
-customs_table = os.environ.get('customs_table')
+object_name = os.environ.get('object')
+staging_table = os.environ.get('staging_table')
+
 
 ### VAR Global ###
 auth = HTTPBasicAuth(user,pw)
 url = "https://secure.mcommons.com/api/" + endpoint
 
 params = {'company':company_key,
-          'campaign_id':'154363',
           'page':1,
          'limit':1000,
          'start_time':update_from,
@@ -51,39 +50,9 @@ def flatXML(tree):
     flat = [flatten_dict(x) for x in tree]
     return flat
 
-def process_sublist(t,obj):       
-    subs = []
-    single = {}
-    for p in t:
-        for k,v in p.items():
-            if k =='id':
-                try:
-                    path = p[obj+'s'][obj]
-                    if isinstance(path, dict): #this is single clicks
-                        single.update({'profile_id':v})
-                        for a,b in path.items():
-                            single.update({a:b})
-                        subs.append(single) 
-                        single = {}
-                    elif isinstance(path, list):
-                        for s in path:
-                            single.update({'profile_id':v})
-                            for a,b in s.items():
-                                single.update({a:b})
-                            subs.append(single) 
-                            single = {}
-                except Exception as ex:
-                    continue                 
-    return subs
-
-def cleanPro(path):
-    for p in path:
-        del(p['clicks'])
-        del(p['custom_columns'])
-    return path
   
 ### PROFILES Loop through pages to get all results ###
-obj = 'profile'
+obj = object_name
 def loopPages(url,auth,params): 
     records = []
     while True: #params['page'] < 3: #change to while True when done testing!!
@@ -104,22 +73,14 @@ def loopPages(url,auth,params):
     params['page'] = 1
     return records
 
-dataPro, dataClick, dataCustom = loopPages(url,auth,params)  
+dataIncoming = loopPages(url,auth,params)  
 
-dfPro = pd.DataFrame(dataPro)
-dfCli = pd.DataFrame(dataClick)
-dfCus = pd.DataFrame(dataCustom)
+dfIncoming = pd.DataFrame(dataIncoming)
   
 ### Dataframe to Civis ###
 client = civis.APIClient()
-civis.io.dataframe_to_civis(dfPro, 'redshift-ppfa', profiles_table, existing_table_rows='drop', distkey='id')
-civis.io.dataframe_to_civis(dfCli, 'redshift-ppfa', clicks_table, existing_table_rows='drop', distkey='id')
-civis.io.dataframe_to_civis(dfCus, 'redshift-ppfa', customs_table, existing_table_rows='drop', distkey='profile_id')
+civis.io.dataframe_to_civis(dfIncoming, 'redshift-ppfa', staging_table, existing_table_rows='drop', distkey='id')
 
-countP=len(dfPro)
-countCl=len(dfCli)
-countCu=len(dfCus)
+countI=len(dfIncoming)
 
-print(str(countP) + " profiles imported")
-print(str(countCl) + " clicks imported")
-print(str(countCu) + " custom fields imported")
+print(str(countIncoming) + " incoming messages imported")
