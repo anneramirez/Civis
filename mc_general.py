@@ -83,4 +83,4 @@ civis.io.dataframe_to_civis(dfIncoming, 'redshift-ppfa', staging_table, existing
 
 countI=len(dfIncoming)
 
-print(str(countIncoming) + " incoming messages imported")
+print(str(countI) + " incoming messages imported")
