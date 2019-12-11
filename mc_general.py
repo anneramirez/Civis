@@ -20,7 +20,7 @@ object_name = os.environ.get('object')
 staging_table = os.environ.get('staging_table')
 
 #TESTING#
-print("endpoint: " + endpoint + "; object: " + object_name + "; table: " + staging_table)
+print(endpoint, object_name, staging_table)
 
 ### VAR Global ###
 auth = HTTPBasicAuth(user,pw)
