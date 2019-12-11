@@ -73,14 +73,14 @@ def loopPages(url,auth,params):
     params['page'] = 1
     return records
 
-dataIncoming = loopPages(url,auth,params)  
+data = loopPages(url,auth,params)  
 
-dfIncoming = pd.DataFrame(dataIncoming)
+df = pd.DataFrame(data)
   
 ### Dataframe to Civis ###
 client = civis.APIClient()
-civis.io.dataframe_to_civis(dfIncoming, 'redshift-ppfa', staging_table, existing_table_rows='drop', distkey='id')
+civis.io.dataframe_to_civis(df, 'redshift-ppfa', staging_table, existing_table_rows='drop', distkey='id')
 
-countI=len(dfIncoming)
+countd=len(df)
 
-print(str(countI) + " incoming messages imported")
+print(str(countd) + object_name + " imported")
