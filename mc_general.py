@@ -85,4 +85,4 @@ civis.io.dataframe_to_civis(df, 'redshift-ppfa', staging_table, existing_table_r
 
 countd=len(df)
 
-print(str(countd) + object_name + " imported")
+print(str(countd) + ' ' + object_name + " imported")
