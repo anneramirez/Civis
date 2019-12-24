@@ -16,8 +16,8 @@ user = os.environ.get('MC_CREDENTIAL_USERNAME')
 pw = os.environ.get('MC_CREDENTIAL_PASSWORD')
 company_key = os.environ.get('company_key')
 endpoint = os.environ.get('endpoint')
-object_s = os.environ.get('objects')
-object = os.environ.get('object')
+object_s = os.environ.get('object_s')
+obj = os.environ.get('object')
 staging_table = os.environ.get('staging_table')
 
 #TESTING#
@@ -56,7 +56,7 @@ def flatXML(tree):
   
 ### PROFILES Loop through pages to get all results ###
 objs = object_s
-obj = object
+obj = obj
 def loopPages(url,auth,params): 
     records = []
     while True: #params['page'] < 3: #change to while True when done testing!!
