@@ -30,8 +30,8 @@ url = "https://secure.mcommons.com/api/" + endpoint
 params = {'company':company_key,
           'page':1,
          'limit':1000,
-         'start_time':update_from,
-         'end_time':update_to}
+         'from':update_from,
+         'to':update_to}
                   
 ### API Call ###
 def getAPIdata(url,auth,params):
