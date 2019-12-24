@@ -19,6 +19,7 @@ endpoint = os.environ.get('endpoint')
 object_s = os.environ.get('object_s')
 obj = os.environ.get('object')
 staging_table = os.environ.get('staging_table')
+campaign_id = os.environ.get('campaign_id')
 
 #TESTING#
 print(endpoint, object_s, staging_table)
@@ -30,6 +31,7 @@ url = "https://secure.mcommons.com/api/" + endpoint
 params = {'company':company_key,
           'page':1,
          'limit':1000,
+          'campaign_id':campaign_id,
          'from':update_from,
          'to':update_to}
                   
