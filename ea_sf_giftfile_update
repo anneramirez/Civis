@@ -116,7 +116,7 @@ else null end) as affiliateid
 	/* gift amount */
 	cont.amount
 	,
-	/* pledge number - tentatively pull in cont.contactsrecurringcontributionid */
+	/* cont.contactsrecurringcontributionid */
 	cont.contactsrecurringcontributionid
 	,
 	/* source code */
@@ -320,7 +320,8 @@ FROM (
 				WHERE fq.onlineformquestionid IN (
 						2046
 						,1693
-						) 
+						)
+        or fq.onlineformquestionname = 'Organization Selected'
 					--drop-down fields on directed forms NOTE YOU MUST ADD NEW IDS WHEN NEW DIRECTED FORMS ARE CREATED /*anne maybe set an alert or something if there's a new directed form?*/
 				) dir ON dir.contactsonlineformid = cof.contactsonlineformid
 			) forms ON forms.contactsonlineformid = contr.contactsonlineformid
@@ -359,7 +360,7 @@ WHERE cont.committeeid IN (
 		,65351 --PPVotes, replace when new data share committee is created
 		)
 	AND cont.datereceived::date >= '2019-07-01'
-  and cont.datereceived::date < current_date;
+  and cont.datereceived::date < CONVERT_TIMEZONE('US/Eastern', getdate())::date;
   
 begin transaction;
 
