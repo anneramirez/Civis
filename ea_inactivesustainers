@@ -2,12 +2,13 @@ select
 id,
 Rc_Bios__End_Date,
 Rc_Bios__Active,
-Rc_Bios__Comments
+Rc_Bios__Comments,
+rd_pref_entity
 
 /* NOT VERY ELEGANT ANNE TRY HARDER */
 from (select
 pref.id,
-coalesce(crc.datecancelled::date,fail.datereceived::date) as "Rc_Bios__End_Date",
+to_char(coalesce(crc.datecancelled::date,fail.datereceived::date),'MM/DD/YYYY') as "Rc_Bios__End_Date",
 'FALSE' as "Rc_Bios__Active",
 (case when crc.recurringcontributionstatusname='Inactive--Failed' then 'Preference closed due to excessive failures in EveryAction'
 when crc.recurringcontributionstatusname='Inactive--Cancelled' then 'Online classification closed due to termination' else null end) as "Rc_Bios__Comments",
