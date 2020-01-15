@@ -18,20 +18,22 @@ company_key = os.environ.get('company_key')
 profiles_table = os.environ.get('profiles_table')
 clicks_table = os.environ.get('clicks_table')
 customs_table = os.environ.get('customs_table')
+subscriptions_table = os.environ.get('subscriptions_table')
 
 ### VAR Global ###
 auth = HTTPBasicAuth(user,pw)
 url = "https://secure.mcommons.com/api/profiles"
 
-params = {'include_custom_columns':'true',
-                   'include_subscriptions':'false',
-                    'include_clicks':'true',
-                    'include_members':'false',
-                    'page':1,
-                    'from':update_from,
-                    'to':update_to,
-          'company':company_key
-                  }
+params = {'company':company_key,
+          'include_custom_columns':'true',
+          'include_subscriptions':'true',
+          'include_clicks':'true',
+          'include_members':'false',
+          'from':update_from,
+          'to':update_to,
+          'page':1,
+          'limit':1000        
+          }
                   
 ### API Call ###
 def getAPIdata(url,auth,params):
@@ -80,8 +82,12 @@ def process_sublist(t,obj):
 
 def cleanPro(path):
     for p in path:
+      try:
         del(p['clicks'])
         del(p['custom_columns'])
+        del(p['subscriptions'])
+      except Exception as ex:
+        continue
     return path
   
 ### PROFILES Loop through pages to get all results ###
@@ -90,6 +96,7 @@ def loopPages(url,auth,params):
     recordsPro = []
     recordsCli = []
     recordsCus = []
+    recordsSub = []
     while True: #change to while True when done testing!!
         try:
             resp = getAPIdata(url,auth,params)
@@ -97,8 +104,10 @@ def loopPages(url,auth,params):
             path = tree['response'][obj+'s'][obj]
             clicks = process_sublist(path,'click')
             customs = process_sublist(path,'custom_column')
+            subscriptions = process_sublist(path,'subscription')
             recordsCli.extend(clicks)
             recordsCus.extend(customs)
+            recordsSub.extend(subscriptions)
             clean = cleanPro(path)
             r = flatXML(clean)
             recordsPro.extend(r)
@@ -111,24 +120,28 @@ def loopPages(url,auth,params):
         except:
             break
     params['page'] = 1
-    return recordsPro, recordsCli, recordsCus  
+    return recordsPro, recordsCli, recordsCus, recordsSub
 
-dataPro, dataClick, dataCustom = loopPages(url,auth,params)  
+dataPro, dataClick, dataCustom, dataSub = loopPages(url,auth,params)  
 
 dfPro = pd.DataFrame(dataPro)
 dfCli = pd.DataFrame(dataClick)
 dfCus = pd.DataFrame(dataCustom)
+dfSub = pd.DataFrame(dataSub)
   
 ### Dataframe to Civis ###
 client = civis.APIClient()
 civis.io.dataframe_to_civis(dfPro, 'redshift-ppfa', profiles_table, existing_table_rows='drop', distkey='id')
 civis.io.dataframe_to_civis(dfCli, 'redshift-ppfa', clicks_table, existing_table_rows='drop', distkey='id')
 civis.io.dataframe_to_civis(dfCus, 'redshift-ppfa', customs_table, existing_table_rows='drop', distkey='profile_id')
+civis.io.dataframe_to_civis(dfSub, 'redshift-ppfa', subscriptions_table, existing_table_rows='drop', distkey='profile_id')
 
 countP=len(dfPro)
 countCl=len(dfCli)
 countCu=len(dfCus)
+countS=len(dfSub)
 
 print(str(countP) + " profiles imported")
 print(str(countCl) + " clicks imported")
 print(str(countCu) + " custom fields imported")
+print(str(countS) + " subscriptions imported")
