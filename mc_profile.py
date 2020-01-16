@@ -9,8 +9,8 @@ import datetime
 
 today = datetime.date.today()
 yesterday = today - datetime.timedelta(days = 1)
-update_from = str(yesterday)+" 00:00:00 UTC"
-update_to = str(yesterday)+" 23:59:59 UTC"
+update_from = str(yesterday)+" 05:00:00 UTC"
+update_to = str(today)+" 04:59:59 UTC"
 
 user = os.environ.get('MC_CREDENTIAL_USERNAME')
 pw = os.environ.get('MC_CREDENTIAL_PASSWORD')
