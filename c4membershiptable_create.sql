@@ -1,120 +1,151 @@
-truncate anneramirez.ppaf_membership;
-insert into anneramirez.ppaf_membership
+--while testing
+drop table anneramirez.ppaf_membership;
+create table anneramirez.ppaf_membership as
+--insert into anneramirez.ppaf_membership
 
 --still need to look at email/phone status
---full outer joins are supes obnox
 --any reason to pull in non-members or expired members??
 --any reason to pull lifetime/contributing dates from eavan? or just stick with rD
 
-
 select
-coalesce(ppidea.resolved_id,ppidrd.resolved_id) as ppid,
-eavan.vanid,
---contact_guid,
-rd.rc_bios__account as rdaccountid,
-mc.profile_id as mcprofileid,
-(case when rd.lifetime is not null then 'lifetime'
- when coalesce(rd.contributing,eavan.contributing) >= current_date-365 then 'contributing'
- when (coalesce(eavan.associate,rd.associate) >= current_date-365 AND (email.emailsubscriptionstatusid=2 or mc.status='Active Subscriber')) then 'associate'
- else 'n/a' end) as current_membership_status, --lifetime, contributing, associate, n/a
+distinct ppid,
+(case when max(status)=3 then 'lifetime'
+ when max(status)=2 then 'contributing'
+ when max(status)=1 then 'associate'
+ else null end) as current_membership_status,
+ (case when max(status)=3 then min(lifetime_startdate)
+ when max(status)=2 then max(contributing_startdate)
+ when max(status)=1 then max(associate_startdate)
+ else null end) as membership_start_date,
+max(email_status) as email_status
+from
+(select
+distinct idr.resolved_id as ppid,
+(case when rd.lifetime is not null then 3
+ when coalesce(rd.contributing,eavan.contributing) is not null then 2
+ when (coalesce(eavan.associate,rd.associate) is not null AND email.emailsubscriptionstatusid=2) then 1
+ else null end) as status, --lifetime, contributing, associate
 rd.lifetime::date as lifetime_startdate,
 coalesce(rd.contributing,eavan.contributing)::date as contributing_startdate,
 coalesce(eavan.associate,rd.associate)::date as associate_startdate,
 email.email as email,
-(case when email.emailsubscriptionstatusid=2 then 'opt-in' else null end) as email_status,
-mc.phone_number as mobile,
-(case when mc.status='Active Subscriber' then 'opt-in' else null end) as mobile_status
+(case when email.emailsubscriptionstatusid=2 then 'opt-in' else null end) as email_status
 
 
 from
-/*** EAVAN membership ***/
-(select
-coalesce(assoc.vanid,a.vanid) as vanid,
-a.datecreated::date as lifetime,
-a.datecanvassed::date as contributing,
-(case when assoc.surveyresponseid=860301 then assoc.datecanvassed::date else null end) as associate
-from 
-(select coalesce(life.vanid,contr.vanid) as vanid, life.datecreated,contr.datecanvassed from
-/*lifetime*/
-(select vanid, max(datecreated) as datecreated from vansync.ppfa_contactsactivistcodes_mym  where activistcodeid=4304186 group by vanid) life
- full outer join 
-/*contributing*/
- (select * from
- (select *, row_number () over (partition by vanid order by datecanvassed desc, datecreated desc) as rownum from vansync.ppfa_contactssurveyresponses_mym where surveyquestionid=203939 and datecanvassed::date<=current_date)
-                  where rownum=1) contr on life.vanid=contr.vanid) a
- full outer join 
-/*associate*/
-(select * from
-(select *, row_number () over (partition by vanid order by datecanvassed desc, datecreated desc) as rownum from vansync.ppfa_contactssurveyresponses_mym where surveyquestionid=203938 and datecanvassed::date<=current_date) 
-                  where rownum=1 and surveyresponseid=860301) assoc on a.vanid=assoc.vanid
-group by 1,2,3,4) eavan 
-
+/*** Customer Graph ***/
+ppfa_golden.current_customer_graph idr
 
 /*** roundData membership ***/
-full outer join
-(select pref.*,alt.valuex as vanid from
-/*membership rollup*/
+left join
 (select
-coalesce(life.rc_bios__account,a.rc_bios__account) as rc_bios__account,
-life.lifetime as lifetime,
-a.contributing as contributing,
-a.associate as associate
+distinct con.id as contact_id,
+pref.*
 from
-(select coalesce(contr.rc_bios__account,assoc.rc_bios__account) as rc_bios__account,contr.contributing,assoc.associate from
-/*associate*/
-(select rc_bios__account,max(rc_bios__start_date) as associate from rounddata.rc_bios__preference
-where rc_bios__code_value in ('NLACTFUND ASSOCIATE')
-and rc_bios__active<>'false'
-and isdeleted<>'true'
-and delete_flag<>'Y'
-and (rc_bios__end_date::date>=current_date or rc_bios__end_date is null)
- group by 1
-) assoc
-full outer join  
-/*contributing*/
-(select rc_bios__account,max(rc_bios__start_date) as contributing from rounddata.rc_bios__preference
-where rc_bios__code_value in ('NLACTFUND ANNUAL')
-and rc_bios__active<>'false'
-and isdeleted<>'true'
-and delete_flag<>'Y'
-and (rc_bios__end_date::date>=current_date or rc_bios__end_date is null)
- group by 1
-) contr on assoc.rc_bios__account=contr.rc_bios__account 
-) a
-full outer join
-/*lifetime*/
+ --pull membership from preferences table
+(select
+rc_bios__account,
+lifetime,
+contributing,
+associate
+from
+
+ /*lifetime*/
 (select rc_bios__account,min(rc_bios__start_date) as lifetime from rounddata.rc_bios__preference
 where rc_bios__code_value in ('NLACTFUND LIFETIME')
 and rc_bios__active<>'false'
 and isdeleted<>'true'
 and delete_flag<>'Y'
+and active_duplicate_detection='ACTIVE'
 and (rc_bios__end_date::date>=current_date or rc_bios__end_date is null)
  group by 1
-) life on a.rc_bios__account=life.rc_bios__account            
-) pref
-/* get vanid */ 
-left join (select accountx,min(valuex) as valuex from rounddata.alternate_id where typex='Van' and active='true' group by 1) alt --adjust to account for many to one
- on pref.rc_bios__account=alt.accountx
-) rd on rd.vanid=eavan.vanid
+) life
 
-/* PPID - VANID */ 
-left join ppfa_golden.current_customer_graph ppidea on ppidea.source_primary_key=eavan.vanid
+ /*contributing*/
+full outer join  
+(select rc_bios__account,max(rc_bios__start_date) as contributing from rounddata.rc_bios__preference
+where rc_bios__code_value in ('NLACTFUND ANNUAL')
+and rc_bios__active<>'false'
+and isdeleted<>'true'
+and delete_flag<>'Y'
+and active_duplicate_detection='ACTIVE'
+and (rc_bios__end_date::date>=current_date or rc_bios__end_date is null)
+and rc_bios__start_date>=current_date-365
+ group by 1
+) contr using (rc_bios__account) 
  
-/* PPID - RDID */ 
-left join ppfa_golden.current_customer_graph ppidrd on ppidrd.source_primary_key=rd.rc_bios__account
+ /*associate*/
+full outer join
+(select rc_bios__account,max(rc_bios__start_date) as associate from rounddata.rc_bios__preference
+where rc_bios__code_value in ('NLACTFUND ASSOCIATE')
+and rc_bios__active<>'false'
+and isdeleted<>'true'
+and delete_flag<>'Y'
+and active_duplicate_detection='ACTIVE'
+and (rc_bios__end_date::date>=current_date or rc_bios__end_date is null)
+and rc_bios__start_date>=current_date-365
+ group by 1
+) assoc using (rc_bios__account)
+ ) pref
+ --join to contact table so we can connect to idr
+left join rounddata.contact con on pref.rc_bios__account=con.accountid
+ ) rd on rd.contact_id=idr.source_primary_key
+
+
+/*** EAVAN membership ***/
+left join
+(select
+vanid,
+life.datecreated::date as lifetime,
+contr.datecanvassed::date as contributing,
+(case when assoc.surveyresponseid=860301 then assoc.datecanvassed::date else null end) as associate
+from 
+
+ /*lifetime*/
+(select vanid, min(datecreated) as datecreated from 
+ vansync.ppfa_contactsactivistcodes_mym 
+ where activistcodeid=4304186 
+ group by vanid
+) life
+ 
+ /*contributing*/
+full outer join 
+(select * from
+ (select *, row_number () over (partition by vanid order by datecanvassed desc, datecreated desc) as rownum from 
+  vansync.ppfa_contactssurveyresponses_mym where surveyquestionid=203939 and datecanvassed::date<=current_date and datecanvassed::date>=current_date-365)
+ where rownum=1
+) contr using (vanid)
+ 
+ /*associate*/
+full outer join 
+(select * from
+ (select *, row_number () over (partition by vanid order by datecanvassed desc, datecreated desc) as rownum from 
+  vansync.ppfa_contactssurveyresponses_mym where surveyquestionid=203938 and datecanvassed::date<=current_date and datecanvassed::date>=current_date-365) 
+ where rownum=1 and surveyresponseid=860301
+) assoc using (vanid)
+group by 1,2,3,4
+) eavan on eavan.vanid=idr.source_primary_key
+
+ 
+/*** Mobile Commons membership ***/
+--in progress
+
+
+/* phone */
+--pulling in from ppid right now
+--need to put together MC tables first
+--in progress
+
+
 
 /* email */
 left join
 (select distinct vanid,email,emailsubscriptionstatusid from
  (select *, row_number () over (partition by vanid order by sub.emailsubscriptionstatusid desc, ce.preferredemail desc, coalesce(sub.datecreated,ce.datecreated) desc) as rownum
   from vansync.ppfa_contactsemails_mym ce left join vansync.ppfa_emailsubscriptions_mym sub using (email) where sub.committeeid=9816 and ce.datesuppressed is null)
- where rownum=1) email on email.vanid=eavan.vanid
-
-/* phone */
---pulling in from ppid right now
---need to put together MC tables first
-left join mobile_commons.profiles mc on ppidea.source_primary_key=mc.profile_id
-
-           
-order by current_membership_status, associate_startdate desc, contributing_startdate desc
+ where rownum=1) email on email.vanid=idr.source_primary_key
+where status is not null
+ )
+ group by ppid
+order by membership_start_date desc
  --assoc member question id=203938 yes response id=860301 | contrib member question id=203939 yes response id=860303
