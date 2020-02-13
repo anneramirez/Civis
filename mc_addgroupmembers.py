@@ -9,10 +9,9 @@ user = os.environ.get('MC_CREDENTIAL_USERNAME')
 pw = os.environ.get('MC_CREDENTIAL_PASSWORD')
 group_id = os.environ.get('group_id')
 db_table = os.environ.get('db_table')
-company = os.environ.get('company_key')
 
 params = {'group_id':group_id, #487022 for testing
-          'company':company,
+          'company':'CO5945A0888A908151444FB59D3D3AC455',
          'phone_number':0}
 
 ### VAR Global ###
@@ -37,4 +36,4 @@ while b<=len(data):
     r = getAPIdata(url,auth,params)
     b+=200
     e+=200
-print('Pushed ',e,' phones to MC group ',group_id,' - ',r)
+print('Pushed ',len(data),' phones to MC group ',group_id,' - ',r)
