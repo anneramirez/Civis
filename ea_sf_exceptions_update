@@ -1,0 +1,54 @@
+create temp table exceptions_update (like anneramirez.ea_sf_exceptions);
+
+insert into exceptions_update 
+select 
+CONVERT_TIMEZONE('US/Eastern', getdate())::date as exception_date,
+donor.email,
+cont.*, 
+(case 
+ when donor.email like '%ppfa.org' then 'likelytest' /*OMG create a script to look for test accounts, add to a table, then cross reference!*/
+ when (cont.contactscontributionid in (select cca.contactscontributionid from vansync.ppfa_contactscontributionsadjustments_mym cca inner join vansync.ppfa_contactscontributions_mym cc using (contactscontributionid) where cc.datereceived::date=cca.dateadjusted::date and cc.amount - cca.adjustmentamount = 0)) then 'refunded'
+ when (cont.marketsource IS NULL or len(cont.marketsource)<>14) then 'marketsource'
+ when cont.creditaccount IS NULL then 'creditaccount'
+ when (cont.paymenttypename is null OR cont.paymenttypename not in ('Visa','Discover','American Express','MasterCard','PayPal','Apple Pay')) then 'paymenttype'
+ when cont.filetype = 'ppfa.ea_C3_PPFA_' and cont.affiliateid IS NULL then 'affiliateid'
+ when (datepart(day,CONVERT_TIMEZONE('US/Eastern', getdate())) > 15 AND (date_part(month, cont.datereceived) = datepart(month, ADD_MONTHS(CONVERT_TIMEZONE('US/Eastern', getdate()), -1)))) then 'lastmonth'
+ when (date_part(month, cont.datereceived) not in (datepart(month, CONVERT_TIMEZONE('US/Eastern', getdate())), datepart(month, ADD_MONTHS(CONVERT_TIMEZONE('US/Eastern', getdate()), -1)))) then 'closedmonth'
+ else null end) as exception_reason
+from anneramirez.ea_sf_giftfile cont
+left join anneramirez.ea_sf_donorfile donor using (vanid)
+	where ((cont.marketsource IS NULL or len(cont.marketsource)<>14)
+	or (cont.filetype = 'ppfa.ea_C3_PPFA_' AND cont.affiliateid IS NULL)
+	or (cont.creditaccount IS NULL)
+	or (date_part(month, cont.datereceived) not in (datepart(month, CONVERT_TIMEZONE('US/Eastern', getdate())), datepart(month, ADD_MONTHS(CONVERT_TIMEZONE('US/Eastern', getdate()), -1))))
+  or ((date_part(month, cont.datereceived) = datepart(month, ADD_MONTHS(CONVERT_TIMEZONE('US/Eastern', getdate()), -1)))
+			and datepart(day,CONVERT_TIMEZONE('US/Eastern', getdate())) > 15)
+	or (cont.contactscontributionid in (select cca.contactscontributionid from vansync.ppfa_contactscontributionsadjustments_mym cca
+			inner join vansync.ppfa_contactscontributions_mym cc using (contactscontributionid)
+			where cc.datereceived::date=cca.dateadjusted::date
+			and cc.amount - cca.adjustmentamount = 0))
+  or (cont.paymenttypename not in ('Visa','Discover','American Express','MasterCard','PayPal','Apple Pay'))
+  or (donor.email like '%ppfa.org' and cont.amount<=10))
+and cont.contactscontributionid not in (select batch_upload_sequence_number from anneramirez.ea_sf_file_master);
+
+begin transaction;
+/*
+maybe incorporate into v2.0 - exceptions could be an ongoing file and i could include exception date and fix date in giftfile instead is there any point to that
+update anneramirez.ea_sf_exceptions
+set fix_date=current_date
+where ea_sf_exceptions.contactscontributionid not in (select distinct contactscontributionid from exceptions_update);
+*/
+/* remove transactions that are no longer excepted */
+delete from anneramirez.ea_sf_exceptions
+using exceptions_update 
+where ea_sf_exceptions.contactscontributionid not in (select distinct contactscontributionid from exceptions_update)
+and ea_sf_exceptions.exception_reason not in ('likelytest','refunded');
+
+/* insert newly excepted transactions */
+insert into anneramirez.ea_sf_exceptions
+select * from exceptions_update exu
+where exu.contactscontributionid not in (select distinct contactscontributionid from anneramirez.ea_sf_exceptions);
+
+end transaction;
+
+drop table exceptions_update;
