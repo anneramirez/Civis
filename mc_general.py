@@ -81,7 +81,7 @@ df = pd.DataFrame(data)
   
 ### Dataframe to Civis ###
 client = civis.APIClient()
-civis.io.dataframe_to_civis(df, 'redshift-ppfa', staging_table, existing_table_rows='drop', distkey='id',max_errors=500)
+civis.io.dataframe_to_civis(df, 'redshift-ppfa', staging_table, existing_table_rows='drop', distkey='id',max_errors=1000)
 
 countd=len(df)
 
