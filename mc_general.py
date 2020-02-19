@@ -57,7 +57,7 @@ def pushData(d):
     client = civis.APIClient()
     civis.io.dataframe_to_civis(df, 'redshift-ppfa', staging_table, existing_table_rows='append', headers='true',max_errors=500)
     countd=len(df)
-    print(str(countd) + ' ' + objs+"s" + " imported")
+    print(str(countd) + ' ' + object_name+"s" + " imported")
   
 ### PROFILES Loop through pages to get all results ###
 obj = object_name
