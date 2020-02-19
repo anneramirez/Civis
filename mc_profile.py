@@ -131,10 +131,10 @@ dfSub = pd.DataFrame(dataSub)
   
 ### Dataframe to Civis ###
 client = civis.APIClient()
-civis.io.dataframe_to_civis(dfPro, 'redshift-ppfa', profiles_table, existing_table_rows='drop', distkey='id',,max_errors=500)
-civis.io.dataframe_to_civis(dfCli, 'redshift-ppfa', clicks_table, existing_table_rows='drop', distkey='id',,max_errors=500)
-civis.io.dataframe_to_civis(dfCus, 'redshift-ppfa', customs_table, existing_table_rows='drop', distkey='profile_id',,max_errors=500)
-civis.io.dataframe_to_civis(dfSub, 'redshift-ppfa', subscriptions_table, existing_table_rows='drop', distkey='profile_id',,max_errors=500)
+civis.io.dataframe_to_civis(dfPro, 'redshift-ppfa', profiles_table, existing_table_rows='drop', distkey='id',max_errors=500)
+civis.io.dataframe_to_civis(dfCli, 'redshift-ppfa', clicks_table, existing_table_rows='drop', distkey='id',max_errors=500)
+civis.io.dataframe_to_civis(dfCus, 'redshift-ppfa', customs_table, existing_table_rows='drop', distkey='profile_id',max_errors=500)
+civis.io.dataframe_to_civis(dfSub, 'redshift-ppfa', subscriptions_table, existing_table_rows='drop', distkey='profile_id',max_errors=500)
 
 countP=len(dfPro)
 countCl=len(dfCli)
