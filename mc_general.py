@@ -52,6 +52,12 @@ def flatXML(tree):
     flat = [flatten_dict(x) for x in tree]
     return flat
 
+def pushData(d):
+    df = pd.DataFrame(d)
+    client = civis.APIClient()
+    civis.io.dataframe_to_civis(df, 'redshift-ppfa', staging_table, existing_table_rows='append', headers='true',max_errors=500)
+    countd=len(df)
+    print(str(countd) + ' ' + objs+"s" + " imported")
   
 ### PROFILES Loop through pages to get all results ###
 obj = object_name
@@ -64,25 +70,16 @@ def loopPages(url,auth,params):
             path = tree['response'][obj+'s'][obj]
             r = flatXML(path)
             records.extend(r)
-            #if (int(tree['response']['profiles']['num']) > 0):
-             #add data file to set
-            
             params['page'] += 1 #go to next page
+            if params['page']%100 == 0: #evaluate current page, if multiple of 100 (so 100k records) push to Civis and continue with an empty list
+                pushData(records)
+                records = []
             #else:
              #   break
         except:
             break
     params['page'] = 1
-    return records
+    pushData(records)
 
-data = loopPages(url,auth,params)  
-
-df = pd.DataFrame(data)
-  
-### Dataframe to Civis ###
-client = civis.APIClient()
-civis.io.dataframe_to_civis(df, 'redshift-ppfa', staging_table, existing_table_rows='drop', distkey='id',max_errors=1000)
-
-countd=len(df)
-
-print(str(countd) + ' ' + object_name + " imported")
+loopPages(url,auth,params)  
+print("Imported " + object_name)
