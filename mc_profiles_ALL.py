@@ -112,7 +112,7 @@ def loopPages(url,auth,params):
     recordsCli = []
     recordsCus = []
     recordsSub = []
-    while params['page'] <=100: #change to while True when done testing!!
+    while True: #change to while True when done testing!!
         try:
             resp = getAPIdata(url,auth,params)
             tree = processXML(resp)
