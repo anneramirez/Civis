@@ -7,11 +7,6 @@ import pandas as pd
 import os
 import datetime
 
-today = datetime.date.today()
-yesterday = today - datetime.timedelta(days = 1)
-update_from = str(yesterday)+" 05:00:00 UTC"
-update_to = str(today)+" 04:59:59 UTC"
-
 user = os.environ.get('MC_CREDENTIAL_USERNAME')
 pw = os.environ.get('MC_CREDENTIAL_PASSWORD')
 company_key = os.environ.get('company_key')
@@ -29,8 +24,6 @@ params = {'company':company_key,
           'include_subscriptions':'true',
           'include_clicks':'true',
           'include_members':'false',
-          'from':update_from,
-          'to':update_to,
           'page':1,
           'limit':1000        
           }
@@ -62,10 +55,10 @@ def pushData(dataPro,dataCli,dataCus,dataSub):
     dfCus = pd.DataFrame(dataCus)
     dfSub = pd.DataFrame(dataSub)
     client = civis.APIClient()
-    civis.io.dataframe_to_civis(dfPro, 'redshift-ppfa', 'mobile_commons_staging.profiles_test', existing_table_rows='append', headers='true',max_errors=500)
-    civis.io.dataframe_to_civis(dfCli, 'redshift-ppfa', 'mobile_commons_staging.clicks_test', existing_table_rows='append', headers='true',max_errors=500)
-    civis.io.dataframe_to_civis(dfCus, 'redshift-ppfa', 'mobile_commons_staging.customs_test', existing_table_rows='append',headers='true', max_errors=500)
-    civis.io.dataframe_to_civis(dfSub, 'redshift-ppfa', 'mobile_commons_staging.subscriptions_test', existing_table_rows='append',headers='true', max_errors=500)
+    civis.io.dataframe_to_civis(dfPro, 'redshift-ppfa', profiles_table, existing_table_rows='append', headers='true',max_errors=500)
+    civis.io.dataframe_to_civis(dfCli, 'redshift-ppfa', clicks_table, existing_table_rows='append', headers='true',max_errors=500)
+    civis.io.dataframe_to_civis(dfCus, 'redshift-ppfa', customs_table, existing_table_rows='append',headers='true', max_errors=500)
+    civis.io.dataframe_to_civis(dfSub, 'redshift-ppfa', subscriptions_table, existing_table_rows='append',headers='true', max_errors=500)
     countP=len(dfPro)
     countCl=len(dfCli)
     countCu=len(dfCus)
