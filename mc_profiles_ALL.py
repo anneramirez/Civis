@@ -55,6 +55,27 @@ def flatXML(tree):
     flat = [flatten_dict(x) for x in tree]
     return flat
 
+###Push to Civis###
+def pushData(dataPro,dataCli,dataCus,dataSub):
+    dfPro = pd.DataFrame(dataPro)
+    dfCli = pd.DataFrame(dataClick)
+    dfCus = pd.DataFrame(dataCustom)
+    dfSub = pd.DataFrame(dataSub)
+    client = civis.APIClient()
+    civis.io.dataframe_to_civis(dfPro, 'redshift-ppfa', 'mobile_commons_staging.profiles_test', existing_table_rows='append', headers='true',max_errors=500)
+    civis.io.dataframe_to_civis(dfCli, 'redshift-ppfa', 'mobile_commons_staging.clicks_test', existing_table_rows='append', headers='true',max_errors=500)
+    civis.io.dataframe_to_civis(dfCus, 'redshift-ppfa', 'mobile_commons_staging.customs_test', existing_table_rows='append',headers='true', max_errors=500)
+    civis.io.dataframe_to_civis(dfSub, 'redshift-ppfa', 'mobile_commons_staging.subscriptions_test', existing_table_rows='append',headers='true', max_errors=500)
+    countP=len(dfPro)
+    countCl=len(dfCli)
+    countCu=len(dfCus)
+    countS=len(dfSub)
+    print(str(countP) + " profiles imported")
+    print(str(countCl) + " clicks imported")
+    print(str(countCu) + " custom fields imported")
+    print(str(countS) + " subscriptions imported")
+
+
 def process_sublist(t,obj):       
     subs = []
     single = {}
@@ -93,11 +114,12 @@ def cleanPro(path):
 ### PROFILES Loop through pages to get all results ###
 obj = 'profile'
 def loopPages(url,auth,params): 
+    startTime= datetime.datetime.now()
     recordsPro = []
     recordsCli = []
     recordsCus = []
     recordsSub = []
-    while True: #change to while True when done testing!!
+    while params['page'] <=100: #change to while True when done testing!!
         try:
             resp = getAPIdata(url,auth,params)
             tree = processXML(resp)
@@ -111,37 +133,23 @@ def loopPages(url,auth,params):
             clean = cleanPro(path)
             r = flatXML(clean)
             recordsPro.extend(r)
-            #if (int(tree['response']['profiles']['num']) > 0):
-             #add data file to set
-            
-            params['page'] += 1 #go to next page
+            params['page'] += 1 #go to next page    
+            if params['page']%50 == 0: #evaluate current page
+                pushData(recordsPro,recordsCli,recordsCus,recordsSub)
+                recordsPro = []
+                recordsCli = []
+                recordsCus = []
+                recordsSub = []
+            if params['page']%10 == 0:
+                timeElapsed=datetime.datetime.now()-startTime
+                print("Processed " + str(params['page']) + " pages in " + str(timeElapsed))
+
             #else:
              #   break
-        except:
+        except Exception as ex:
+            print(ex)
             break
     params['page'] = 1
-    return recordsPro, recordsCli, recordsCus, recordsSub
+    pushData(recordsPro,recordsCli,recordsCus,recordsSub)
 
-dataPro, dataClick, dataCustom, dataSub = loopPages(url,auth,params)  
-
-dfPro = pd.DataFrame(dataPro)
-dfCli = pd.DataFrame(dataClick)
-dfCus = pd.DataFrame(dataCustom)
-dfSub = pd.DataFrame(dataSub)
-  
-### Dataframe to Civis ###
-client = civis.APIClient()
-civis.io.dataframe_to_civis(dfPro, 'redshift-ppfa', profiles_table, existing_table_rows='drop', distkey='id',max_errors=500)
-civis.io.dataframe_to_civis(dfCli, 'redshift-ppfa', clicks_table, existing_table_rows='drop', distkey='id',max_errors=500)
-civis.io.dataframe_to_civis(dfCus, 'redshift-ppfa', customs_table, existing_table_rows='drop', distkey='profile_id',max_errors=500)
-civis.io.dataframe_to_civis(dfSub, 'redshift-ppfa', subscriptions_table, existing_table_rows='drop', distkey='profile_id',max_errors=500)
-
-countP=len(dfPro)
-countCl=len(dfCli)
-countCu=len(dfCus)
-countS=len(dfSub)
-
-print(str(countP) + " profiles imported")
-print(str(countCl) + " clicks imported")
-print(str(countCu) + " custom fields imported")
-print(str(countS) + " subscriptions imported")
+loopPages(url,auth,params)
