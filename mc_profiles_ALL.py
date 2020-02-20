@@ -58,8 +58,8 @@ def flatXML(tree):
 ###Push to Civis###
 def pushData(dataPro,dataCli,dataCus,dataSub):
     dfPro = pd.DataFrame(dataPro)
-    dfCli = pd.DataFrame(dataClick)
-    dfCus = pd.DataFrame(dataCustom)
+    dfCli = pd.DataFrame(dataCli)
+    dfCus = pd.DataFrame(dataCus)
     dfSub = pd.DataFrame(dataSub)
     client = civis.APIClient()
     civis.io.dataframe_to_civis(dfPro, 'redshift-ppfa', 'mobile_commons_staging.profiles_test', existing_table_rows='append', headers='true',max_errors=500)
