@@ -93,8 +93,6 @@ def process_sublist(t,obj):
                             subs.append(single) 
                             single = {}
                 except Exception as ex:
-                    print("Exception raised in process_sublist on page " + str(params['page']))
-                    print(ex)
                     continue                 
     return subs
 
