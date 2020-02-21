@@ -64,6 +64,7 @@ def pushData(dataPro,dataCli,dataCus,dataSub):
     countCl=len(dfCli)
     countCu=len(dfCus)
     countS=len(dfSub)
+    print(datetime.datetime.now())
     print(str(countP) + " profiles imported")
     print(str(countCl) + " clicks imported")
     print(str(countCu) + " custom fields imported")
