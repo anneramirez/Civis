@@ -54,6 +54,7 @@ def pushData(dataPro,dataCli,dataCus,dataSub):
     dfCli = pd.DataFrame(dataCli)
     dfCus = pd.DataFrame(dataCus)
     dfSub = pd.DataFrame(dataSub)
+    dfPro.drop(columns='source_email',errors='ignore')
     client = civis.APIClient()
     civis.io.dataframe_to_civis(dfPro, 'redshift-ppfa', profiles_table, existing_table_rows='append', headers='true',max_errors=500)
     civis.io.dataframe_to_civis(dfCli, 'redshift-ppfa', clicks_table, existing_table_rows='append', headers='true',max_errors=500)
@@ -91,6 +92,8 @@ def process_sublist(t,obj):
                             subs.append(single) 
                             single = {}
                 except Exception as ex:
+                    print("Exception raised in process_sublist on page " + str(params['page']))
+                    print(ex)
                     continue                 
     return subs
 
@@ -127,7 +130,7 @@ def loopPages(url,auth,params):
             r = flatXML(clean)
             recordsPro.extend(r)
             params['page'] += 1 #go to next page    
-            if params['page']%50 == 0: #evaluate current page
+            if params['page']%100 == 0: #evaluate current page
                 pushData(recordsPro,recordsCli,recordsCus,recordsSub)
                 recordsPro = []
                 recordsCli = []
@@ -140,7 +143,9 @@ def loopPages(url,auth,params):
             #else:
              #   break
         except Exception as ex:
+            print("Exception raised in looppages on page " + str(params['page']))
             print(ex)
+            print ex.message
             break
     params['page'] = 1
     pushData(recordsPro,recordsCli,recordsCus,recordsSub)
