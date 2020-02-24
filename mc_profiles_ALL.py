@@ -60,6 +60,7 @@ def pushData(dataPro,dataCli,dataCus,dataSub):
     civis.io.dataframe_to_civis(dfCli, 'redshift-ppfa', clicks_table, existing_table_rows='append', headers='true',max_errors=500)
     civis.io.dataframe_to_civis(dfCus, 'redshift-ppfa', customs_table, existing_table_rows='append',headers='true', max_errors=500)
     civis.io.dataframe_to_civis(dfSub, 'redshift-ppfa', subscriptions_table, existing_table_rows='append',headers='true', max_errors=500)
+    print(civis.io.read_civis_sql('select count(id) from ' + profiles_table,'redshift-ppfa'))
     countP=len(dfPro)
     countCl=len(dfCli)
     countCu=len(dfCus)
@@ -127,9 +128,8 @@ def loopPages(url,auth,params):
             recordsSub.extend(subscriptions)
             clean = cleanPro(path)
             r = flatXML(clean)
-            recordsPro.extend(r)
-            params['page'] += 1 #go to next page    
-            if params['page']%100 == 0: #evaluate current page
+            recordsPro.extend(r) 
+            if params['page']%25 == 0: #evaluate current page
                 pushData(recordsPro,recordsCli,recordsCus,recordsSub)
                 recordsPro = []
                 recordsCli = []
@@ -138,6 +138,7 @@ def loopPages(url,auth,params):
             if params['page']%10 == 0:
                 timeElapsed=datetime.datetime.now()-startTime
                 print("Processed " + str(params['page']) + " pages in " + str(timeElapsed))
+            params['page'] += 1 #go to next page   
 
             #else:
              #   break
