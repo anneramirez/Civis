@@ -144,7 +144,6 @@ def loopPages(url,auth,params):
         except Exception as ex:
             print("Exception raised in looppages on page " + str(params['page']))
             print(ex)
-            print (ex.message)
             break
     params['page'] = 1
     pushData(recordsPro,recordsCli,recordsCus,recordsSub)
