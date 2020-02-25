@@ -55,6 +55,7 @@ def pushData(dataPro,dataCli,dataCus,dataSub):
     dfCus = pd.DataFrame(dataCus)
     dfSub = pd.DataFrame(dataSub)
     dfPro.drop(columns='source_email',errors='ignore')
+    dfPro['page'] = str(params['page'])
     client = civis.APIClient()
     civis.io.dataframe_to_civis(dfPro, 'redshift-ppfa', profiles_table, existing_table_rows='append', headers='true',max_errors=500)
     civis.io.dataframe_to_civis(dfCli, 'redshift-ppfa', clicks_table, existing_table_rows='append', headers='true',max_errors=500)
@@ -135,7 +136,7 @@ def loopPages(url,auth,params):
                 recordsCli = []
                 recordsCus = []
                 recordsSub = []
-            if params['page']%10 == 0:
+            if params['page']%100 == 0:
                 timeElapsed=datetime.datetime.now()-startTime
                 print("Processed " + str(params['page']) + " pages in " + str(timeElapsed))
             params['page'] += 1 #go to next page   
