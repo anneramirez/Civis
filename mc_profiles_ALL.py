@@ -57,7 +57,7 @@ def pushData(dataPro,dataCli,dataCus,dataSub):
     dfPro.drop(columns='source_email',errors='ignore')
     dfPro['page'] = str(params['page'])
     client = civis.APIClient()
-    civis.io.dataframe_to_civis(dfPro, 'redshift-ppfa', profiles_table, existing_table_rows='append', headers='true',max_errors=500)
+    civis.io.dataframe_to_civis(dfPro, 'redshift-ppfa', profiles_table, existing_table_rows='append', headers='true',max_errors=24999)
     civis.io.dataframe_to_civis(dfCli, 'redshift-ppfa', clicks_table, existing_table_rows='append', headers='true',max_errors=500)
     civis.io.dataframe_to_civis(dfCus, 'redshift-ppfa', customs_table, existing_table_rows='append',headers='true', max_errors=500)
     civis.io.dataframe_to_civis(dfSub, 'redshift-ppfa', subscriptions_table, existing_table_rows='append',headers='true', max_errors=500)
