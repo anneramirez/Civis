@@ -72,10 +72,12 @@ def loopPages(url,auth,params):
             path = tree['response'][obj+'s'][obj]
             r = flatXML(path)
             records.extend(r)
-            params['page'] += 1 #go to next page
+            if endpoint == 'groups':
+                break
             if params['page']%100 == 0: #evaluate current page, if multiple of 100 (so 100k records) push to Civis and continue with an empty list
                 pushData(records)
                 records = []
+            params['page'] += 1 #go to next page
             #else:
              #   break
         except:
