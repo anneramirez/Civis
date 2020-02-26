@@ -26,11 +26,13 @@ print(endpoint, object_name, staging_table)
 auth = HTTPBasicAuth(user,pw)
 url = "https://secure.mcommons.com/api/" + endpoint
 
-params = {'company':company_key,
-          'page':1,
-         'limit':1000,
-         'start_time':update_from,
-         'end_time':update_to}
+params = {'company':company_key}
+
+if endpoint != 'groups':
+    params.update( {'page':1,
+                    'limit':1000,
+                    'start_time':update_from,
+                    'end_time':update_to} )
                   
 ### API Call ###
 def getAPIdata(url,auth,params):
