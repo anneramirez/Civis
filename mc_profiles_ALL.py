@@ -27,7 +27,21 @@ params = {'company':company_key,
           'page':1,
           'limit':1000        
           }
-                  
+
+col_names = ['address_city', 'address_country', 'address_postal_code',
+       'address_state', 'address_street1', 'address_street2', 'created_at',
+       'email', 'first_name', 'id', 'last_name',
+       'last_saved_districts_congressional_district',
+       'last_saved_districts_split_district',
+       'last_saved_districts_state_lower_district',
+       'last_saved_districts_state_upper_district', 'last_saved_location_city',
+       'last_saved_location_country', 'last_saved_location_latitude',
+       'last_saved_location_longitude', 'last_saved_location_postal_code',
+       'last_saved_location_precision', 'last_saved_location_state',
+       'opted_out_at', 'opted_out_source', 'phone_number', 'source_id',
+       'source_message_id', 'source_name', 'source_opt_in_path_id',
+       'source_type', 'status', 'updated_at']
+
 ### API Call ###
 def getAPIdata(url,auth,params):
     resp = requests.get(url, auth=auth, params=params)
@@ -50,14 +64,14 @@ def flatXML(tree):
 
 ###Push to Civis###
 def pushData(dataPro,dataCli,dataCus,dataSub):
-    dfPro = pd.DataFrame(dataPro)
+    dfPro = pd.DataFrame(dataPro, columns=col_names)
     dfCli = pd.DataFrame(dataCli)
     dfCus = pd.DataFrame(dataCus)
     dfSub = pd.DataFrame(dataSub)
     dfPro = dfPro.drop(columns='source_email',errors='ignore')
     dfPro['page'] = str(params['page'])
     client = civis.APIClient()
-    civis.io.dataframe_to_civis(dfPro, 'redshift-ppfa', profiles_table, existing_table_rows='append', headers='true',max_errors=24999)
+    civis.io.dataframe_to_civis(dfPro, 'redshift-ppfa', profiles_table, existing_table_rows='append', headers='true',max_errors=500)
     civis.io.dataframe_to_civis(dfCli, 'redshift-ppfa', clicks_table, existing_table_rows='append', headers='true',max_errors=500)
     civis.io.dataframe_to_civis(dfCus, 'redshift-ppfa', customs_table, existing_table_rows='append',headers='true', max_errors=500)
     civis.io.dataframe_to_civis(dfSub, 'redshift-ppfa', subscriptions_table, existing_table_rows='append',headers='true', max_errors=500)
