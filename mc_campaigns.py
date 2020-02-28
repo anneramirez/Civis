@@ -9,8 +9,8 @@ import datetime
 
 user = os.environ.get('MC_CREDENTIAL_USERNAME')
 pw = os.environ.get('MC_CREDENTIAL_PASSWORD')
-endpoint = os.environ.get('endpoint')
-object_name = os.environ.get('object')
+endpoint = 'campaigns'
+object_name = 'campaign'
 campaigns_table = os.environ.get('campaigns_table')
 opt_in_paths_table = os.environ.get('opt_in_paths_table')
 
