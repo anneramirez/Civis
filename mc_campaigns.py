@@ -7,23 +7,18 @@ import pandas as pd
 import os
 import datetime
 
-today = datetime.date.today()
-yesterday = today - datetime.timedelta(days = 1)
-update_from = str(yesterday)+" 00:00:00 UTC"
-update_to = str(yesterday)+" 23:59:59 UTC"
-
 user = os.environ.get('MC_CREDENTIAL_USERNAME')
 pw = os.environ.get('MC_CREDENTIAL_PASSWORD')
-company_key = os.environ.get('company_key')
 endpoint = os.environ.get('endpoint')
 object_name = os.environ.get('object')
-staging_table = os.environ.get('staging_table')
+campaigns_table = os.environ.get('campaigns_table')
+opt_in_paths_table = os.environ.get('opt_in_paths_table')
 
 ### VAR Global ###
 auth = HTTPBasicAuth(user,pw)
 url = "https://secure.mcommons.com/api/" + endpoint
 
-params = {'company':company_key,
+params = {'company':'CO5945A0888A908151444FB59D3D3AC455',
          'include_opt_in_paths':1}
          
 def getAPIdata(url,auth,params):
@@ -45,6 +40,16 @@ def flatXML(tree):
     flat = [flatten_dict(x) for x in tree]
     return flat
     
+def pushData(dataCam,dataOpt):
+    dfCam = pd.DataFrame(dataCam)
+    dfOpt = pd.DataFrame(dataOpt)
+    client = civis.APIClient()
+    civis.io.dataframe_to_civis(dfCam, 'redshift-ppfa', campaigns_table, existing_table_rows='append', headers='true',max_errors=500)
+    civis.io.dataframe_to_civis(dfOpt, 'redshift-ppfa', opt_in_paths_table, existing_table_rows='append', headers='true',max_errors=500)
+    print(civis.io.read_civis_sql('select count(id) from ' + campaigns_table,'redshift-ppfa'))
+    print(str(len(dfCam)) + ' ' + object_name+"s" + " imported")
+    print(str(len(dfOpt)) + " opt-in paths imported")         
+         
 def process_sublist(t,obj):       
     subs = []
     single = {}
@@ -80,7 +85,7 @@ obj = object_name
 def loopPages(url,auth,params): 
     recordsCam = []
     recordsOpt = []
-    while params['page'] < 4: #change to while True when done testing!!
+    while True: #change to while True when done testing!!
         try:
             resp = getAPIdata(url,auth,params)
             tree = processXML(resp)
@@ -90,28 +95,11 @@ def loopPages(url,auth,params):
             clean = cleanPro(path)
             r = flatXML(clean)
             recordsCam.extend(r)
-            #if (int(tree['response']['profiles']['num']) > 0):
-             #add data file to set
-            
             params['page'] += 1 #go to next page
-            #else:
-             #   break
-        except:
+        except Exception as ex:
+            print(ex)
             break
     params['page'] = 1
-    return recordsCam, recordsOpt
+    pushData(recordsCam,recordsOpt)
     
-dataCam, dataOpt = loopPages(url,auth,params)  
-
-dfCam = pd.DataFrame(dataCam)
-dfOpt = pd.DataFrame(dataOpt)
-  
-### Dataframe to Civis ###
-client = civis.APIClient()
-civis.io.dataframe_to_civis(df, 'redshift-ppfa', staging_table, existing_table_rows='drop', distkey='id')
-
-countC=len(dfCam)
-countO=len(dfOpt)
-
-print(str(countC) + object_name + " imported")    
-print(str(countO) + "opt in paths imported")    
+loopPages(url,auth,params)
