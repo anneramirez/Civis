@@ -9,8 +9,8 @@ import datetime
 
 today = datetime.date.today()
 yesterday = today - datetime.timedelta(days = 1)
-update_from = str(yesterday)+" 05:00:00 UTC"
-update_to = str(today)+" 04:59:59 UTC"
+#update_from = str(yesterday)+" 05:00:00 UTC"
+#update_to = str(today)+" 04:59:59 UTC"
 
 user = os.environ.get('MC_CREDENTIAL_USERNAME')
 pw = os.environ.get('MC_CREDENTIAL_PASSWORD')
@@ -24,8 +24,8 @@ auth = HTTPBasicAuth(user,pw)
 url = "https://secure.mcommons.com/api/broadcasts"
 
 params = {'company':'CO5945A0888A908151444FB59D3D3AC455',
-          'start_time':update_from,
-          'end_time':update_to,
+          #'start_time':update_from,
+          #'end_time':update_to,
           'page':1     
           }
                   
