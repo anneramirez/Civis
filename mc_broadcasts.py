@@ -7,11 +7,6 @@ import pandas as pd
 import os
 import datetime
 
-today = datetime.date.today()
-yesterday = today - datetime.timedelta(days = 1)
-#update_from = str(yesterday)+" 05:00:00 UTC"
-#update_to = str(today)+" 04:59:59 UTC"
-
 user = os.environ.get('MC_CREDENTIAL_USERNAME')
 pw = os.environ.get('MC_CREDENTIAL_PASSWORD')
 broadcasts_table = os.environ.get('broadcasts_table')
@@ -24,8 +19,6 @@ auth = HTTPBasicAuth(user,pw)
 url = "https://secure.mcommons.com/api/broadcasts"
 
 params = {'company':'CO5945A0888A908151444FB59D3D3AC455',
-          #'start_time':update_from,
-          #'end_time':update_to,
           'page':1     
           }
                   
@@ -113,8 +106,6 @@ def loopPages(url,auth,params):
             clean = cleanPro(path)
             r = flatXML(clean)
             recordsBro.extend(r)
-            #if (int(tree['response']['profiles']['num']) > 0):
-             #add data file to set
             
             params['page'] += 1 #go to next page
             #else:
