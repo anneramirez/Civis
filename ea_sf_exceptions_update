@@ -6,7 +6,7 @@ CONVERT_TIMEZONE('US/Eastern', getdate())::date as exception_date,
 donor.email,
 cont.*, 
 (case 
- when donor.email like '%ppfa.org' then 'likelytest' /*OMG create a script to look for test accounts, add to a table, then cross reference!*/
+ when donor.email like 'ellen.freytag%' or donor.email like 'jamoya.jones%' or donor.email like 'aimee.martin%' or donor.email like 'molly.crosby%' or donor.email like 'anne.ramirez%' then 'likelytest' /*OMG create a script to look for test accounts, add to a table, then cross reference!*/
  when (cont.contactscontributionid in (select cca.contactscontributionid from vansync.ppfa_contactscontributionsadjustments_mym cca inner join vansync.ppfa_contactscontributions_mym cc using (contactscontributionid) where cc.datereceived::date=cca.dateadjusted::date and cc.amount - cca.adjustmentamount = 0)) then 'refunded'
  when (cont.marketsource IS NULL or len(cont.marketsource)<>14) then 'marketsource'
  when cont.creditaccount IS NULL then 'creditaccount'
@@ -28,7 +28,7 @@ left join anneramirez.ea_sf_donorfile donor using (vanid)
 			where cc.datereceived::date=cca.dateadjusted::date
 			and cc.amount - cca.adjustmentamount = 0))
   or (cont.paymenttypename not in ('Visa','Discover','American Express','MasterCard','PayPal','Apple Pay'))
-  or (donor.email like '%ppfa.org' and cont.amount<=10))
+  or (donor.email like 'ellen.freytag%' or donor.email like 'jamoya.jones%' or donor.email like 'aimee.martin%' or donor.email like 'molly.crosby%' or donor.email like 'anne.ramirez%')
 and cont.contactscontributionid not in (select batch_upload_sequence_number from anneramirez.ea_sf_file_master);
 
 begin transaction;
