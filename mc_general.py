@@ -58,7 +58,7 @@ def pushData(d):
     df = pd.DataFrame(d)
     if endpoint == 'sent_messages':
         if not 'broadcast_id' in df.columns:
-            df['broadcast_id'] = null
+            df['broadcast_id'] = ''
     client = civis.APIClient()
     civis.io.dataframe_to_civis(df, 'redshift-ppfa', staging_table, existing_table_rows='append', headers='true',max_errors=500)
     countd=len(df)
