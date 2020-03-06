@@ -94,9 +94,11 @@ def loopPages(url,auth,params):
     recordsBro = []
     recordsInc = []
     recordsExc = []
+    print("start while loop " + str(datetime.datetime.now()))
     while True: #change to while True when done testing!!
         try:
             resp = getAPIdata(url,auth,params)
+            print("resp " + str(datetime.datetime.now()))
             tree = processXML(resp)
             path = tree['response'][obj+'s'][obj]
             inc = process_sublist(path,'included_groups')
@@ -106,12 +108,15 @@ def loopPages(url,auth,params):
             clean = cleanPro(path)
             r = flatXML(clean)
             recordsBro.extend(r)
-            
+            print("page done " + str(datetime.datetime.now()))
             params['page'] += 1 #go to next page
             #else:
              #   break
         except Exception as ex:
             print(ex)
+            print(resp)
+            print(resp.text)
+            print(params['page'])
             break
     print(params['page'])
     params['page'] = 1
