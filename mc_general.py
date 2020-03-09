@@ -28,7 +28,7 @@ url = "https://secure.mcommons.com/api/" + endpoint
 
 params = {'company':company_key}
 
-if endpoint != 'groups':
+if endpoint != ['groups','tinyurls']:
     params.update( {'page':1,
                     'limit':1000,
                     'start_time':update_from,
