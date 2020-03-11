@@ -47,7 +47,6 @@ def processXML(d):
 
 ###Flatten###
 def flatten_dict(d, separator='_', prefix=''):
-    print("flattendict?")
     return { prefix + separator + k if prefix else k : v
             for k, v in d.items()
             for k, v in flatten_dict(v, separator, k).items()
