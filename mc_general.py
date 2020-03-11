@@ -76,7 +76,7 @@ def loopPages(url,auth,params):
     while True: #params['page'] < 3: #change to while True when done testing!!
         try:
             resp = getAPIdata(url,auth,params)
-            tree = processXML(resp)
+            tree = xmltodict.parse(resp.content, attr_prefix='', cdata_key='value', dict_constructor=dict)
             path = tree['response'][obj+'s'][obj]
             r = flatXML(path)
             records.extend(r)
