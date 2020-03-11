@@ -89,7 +89,7 @@ def loopPages(url,auth,params):
         except Exception as ex:
             print("Exception raised in looppages on page " + str(params['page']))
             print(ex)
-            break
+            continue
     print(str(params['page']) + " total pages processed, executing final data push")
     params['page'] = 1
     pushData(records)
