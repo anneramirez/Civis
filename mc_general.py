@@ -37,14 +37,17 @@ if endpoint not in ['groups','tinyurls']:
 ### API Call ###
 def getAPIdata(url,auth,params):
     resp = requests.get(url, auth=auth, params=params)
+    print("API call done")
     return resp 
 
 def processXML(d):
     tree = xmltodict.parse(d.content, attr_prefix='', cdata_key='value', dict_constructor=dict)
+    print("processXML done")
     return tree
 
 ###Flatten###
 def flatten_dict(d, separator='_', prefix=''):
+    print("flattendict?")
     return { prefix + separator + k if prefix else k : v
             for k, v in d.items()
             for k, v in flatten_dict(v, separator, k).items()
@@ -52,6 +55,7 @@ def flatten_dict(d, separator='_', prefix=''):
             
 def flatXML(tree):
     flat = [flatten_dict(x) for x in tree]
+    print("flatXML done")
     return flat
 
 def pushData(d):
