@@ -6,6 +6,7 @@ from requests.auth import HTTPBasicAuth
 import pandas as pd
 import os
 import datetime
+import sys
 
 today = datetime.date.today()
 yesterday = today - datetime.timedelta(days = 1)
