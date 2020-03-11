@@ -67,6 +67,7 @@ def pushData(d):
 ### PROFILES Loop through pages to get all results ###
 obj = object_name
 def loopPages(url,auth,params): 
+    startTime = datetime.datetime.now()
     records = []
     while True: #params['page'] < 3: #change to while True when done testing!!
         try:
@@ -80,11 +81,16 @@ def loopPages(url,auth,params):
             if params['page']%100 == 0: #evaluate current page, if multiple of 100 (so 100k records) push to Civis and continue with an empty list
                 pushData(records)
                 records = []
+                timeElapsed = datetime.datetime.now()-startTime
+                print("Processed " + str(params['page']) + " pages in " + str(timeElapsed))
             params['page'] += 1 #go to next page
             #else:
              #   break
-        except:
+        except Exception as ex:
+            print("Exception raised in looppages on page " + str(params['page']))
+            print(ex)
             break
+    print(str(params['page']) + " total pages processed, executing final data push')
     params['page'] = 1
     pushData(records)
 
