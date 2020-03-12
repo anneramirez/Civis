@@ -80,7 +80,7 @@ def loopPages(url,auth,params):
             path = tree['response'][obj+'s'][obj]
             r = flatXML(path)
             records.extend(r)
-            if endpoint == 'groups':
+            if endpoint in ['groups','tinyurls']:
                 break
             if params['page']%100 == 0: #evaluate current page, if multiple of 100 (so 100k records) push to Civis and continue with an empty list
                 pushData(records)
