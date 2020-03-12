@@ -95,7 +95,7 @@ def loopPages(url,auth,params):
             print(ex)
             print("Unexpected error:", sys.exc_info()[0])
             break
-    if endpoint != 'groups':
+    if endpoint not in ['groups','tinyurls']:
         print(str(params['page']) + " total pages processed, executing final data push")
         params['page'] = 1
     pushData(records)
