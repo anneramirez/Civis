@@ -95,8 +95,9 @@ def loopPages(url,auth,params):
             print(ex)
             print("Unexpected error:", sys.exc_info()[0])
             break
-    print(str(params['page']) + " total pages processed, executing final data push")
-    params['page'] = 1
+    if endpoint != 'groups':
+        print(str(params['page']) + " total pages processed, executing final data push")
+        params['page'] = 1
     pushData(records)
 
 loopPages(url,auth,params)  
