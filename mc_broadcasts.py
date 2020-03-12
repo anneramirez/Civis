@@ -94,11 +94,15 @@ def loopPages(url,auth,params):
     recordsBro = []
     recordsInc = []
     recordsExc = []
+    pageCount = 1
     print("start while loop " + str(datetime.datetime.now()))
-    while True: #change to while True when done testing!!
+    while params['page'] <= pageCount: #change to while True when done testing!!
         try:
             resp = getAPIdata(url,auth,params)
+            print("resp " + str(datetime.datetime.now()))
             tree = processXML(resp)
+            pages = tree['response'][obj+'s']
+            pageCount = pages.get('page_count')
             path = tree['response'][obj+'s'][obj]
             inc = process_sublist(path,'included_groups')
             exc = process_sublist(path,'excluded_groups')
