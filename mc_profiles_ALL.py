@@ -6,6 +6,7 @@ from requests.auth import HTTPBasicAuth
 import pandas as pd
 import os
 import datetime
+import sys
 
 user = os.environ.get('MC_CREDENTIAL_USERNAME')
 pw = os.environ.get('MC_CREDENTIAL_PASSWORD')
@@ -45,6 +46,7 @@ col_names = ['address_city', 'address_country', 'address_postal_code',
 ### API Call ###
 def getAPIdata(url,auth,params):
     resp = requests.get(url, auth=auth, params=params)
+    print("API call done: " + resp)
     return resp 
 
 def processXML(d):
@@ -160,6 +162,7 @@ def loopPages(url,auth,params):
         except Exception as ex:
             print("Exception raised in looppages on page " + str(params['page']))
             print(ex)
+            print("Unexpected error:", sys.exc_info()[0])
             break
     params['page'] = 1
     pushData(recordsPro,recordsCli,recordsCus,recordsSub)
