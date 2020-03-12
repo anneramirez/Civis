@@ -102,7 +102,7 @@ def loopPages(url,auth,params):
             print("resp " + str(datetime.datetime.now()))
             tree = processXML(resp)
             pages = tree['response'][obj+'s']
-            pageCount = pages.get('page_count')
+            pageCount = int(pages.get('page_count'))
             path = tree['response'][obj+'s'][obj]
             inc = process_sublist(path,'included_groups')
             exc = process_sublist(path,'excluded_groups')
