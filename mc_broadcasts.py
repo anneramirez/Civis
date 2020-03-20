@@ -9,6 +9,7 @@ import datetime
 
 user = os.environ.get('MC_CREDENTIAL_USERNAME')
 pw = os.environ.get('MC_CREDENTIAL_PASSWORD')
+company_key = os.environ.get('company_key')
 broadcasts_table = os.environ.get('broadcasts_table')
 included_groups_table = os.environ.get('included_groups_table')
 excluded_groups_table = os.environ.get('excluded_groups_table')
@@ -18,7 +19,7 @@ excluded_groups_table = os.environ.get('excluded_groups_table')
 auth = HTTPBasicAuth(user,pw)
 url = "https://secure.mcommons.com/api/broadcasts"
 
-params = {'company':'CO5945A0888A908151444FB59D3D3AC455',
+params = {'company':company_key,
           'page':1     
           }
                   
