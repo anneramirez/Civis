@@ -7,6 +7,8 @@ import pandas as pd
 import os
 import datetime
 
+client = civis.APIClient()
+
 user = os.environ.get('MC_CREDENTIAL_USERNAME')
 pw = os.environ.get('MC_CREDENTIAL_PASSWORD')
 company_key = os.environ.get('company_key')
@@ -47,11 +49,10 @@ def pushData(dataBro, dataInc, dataExc):
     dfB = pd.DataFrame(dataBro)
     dfI = pd.DataFrame(dataInc)
     dfO = pd.DataFrame(dataExc)
-    client = civis.APIClient()
     civis.io.dataframe_to_civis(dfB, 'redshift-ppfa', broadcasts_table, existing_table_rows='append', headers='true',max_errors=500)
     civis.io.dataframe_to_civis(dfI, 'redshift-ppfa', included_groups_table, existing_table_rows='append', headers='true',max_errors=500)
     civis.io.dataframe_to_civis(dfO, 'redshift-ppfa', excluded_groups_table, existing_table_rows='append',headers='true', max_errors=500)
-    print(civis.io.read_civis_sql('select count(id) from ' + broadcasts_table,'redshift-ppfa'))
+    print(civis.io.read_civis_sql('select count(distinct id) from ' + broadcasts_table,'redshift-ppfa'))
     print(datetime.datetime.now())
     print(str(len(dfB)) + " broadcasts imported")
     print(str(len(dfI)) + " inccluded groups imported")
@@ -126,3 +127,14 @@ def loopPages(url,auth,params):
     pushData(recordsBro, recordsInc, recordsExc)
 
 loopPages(url,auth,params)
+
+bro_t = civis.io.read_civis_sql('select count(distinct broadcast_id) from mobile_commons.broadcasts','redshift-ppfa')
+bro_count = int(bro_t[1][0])
+new_t = civis.io.read_civis_sql('select count(distinct id) from ' + broadcasts_table,'redshift-ppfa')
+new_count = int(new_t[1][0])
+
+if new_count >= bro_count:
+          break
+elif new_count < bro_count:
+          civis.io.read_civis_sql('drop table ' + broadcasts_table,'redshift-ppfa')
+          loopPages(url,auth,params)
