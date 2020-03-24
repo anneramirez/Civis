@@ -94,8 +94,6 @@ def loopMonth (url,auth,params):
 		try:
 			loopPages(url,auth,params)
 			print("Imported outgoing from " + str(start))
-			global start 
-			global end
 			end = start
 			start = end - datetime.timedelta(days = 1)
 			params.update({ 'start_time': str(start)+" 05:00:00 UTC",
