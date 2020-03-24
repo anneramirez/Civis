@@ -7,7 +7,7 @@ import pandas as pd
 import os
 import datetime
 
-end = datetime.datetime(2020, 2, 18)
+end = datetime.date(2020, 2, 18)
 start = end - datetime.timedelta(days = 1)
 
 update_from = str(start)+" 05:00:00 UTC"
@@ -84,7 +84,7 @@ def loopPages(url,auth,params):
     params['page'] = 1
     pushData(records)
 
-while start >= 2020-02-01:
+while start >= datetime.date(2020, 2, 1):
     try:
         loopPages(url,auth,params)  
         print("Imported outgoing from " + str(start))
