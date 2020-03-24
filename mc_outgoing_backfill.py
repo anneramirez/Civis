@@ -86,6 +86,8 @@ def loopPages(url,auth,params):
     pushData(records)
 
 def loopMonth (url,auth,params):
+	end = datetime.date(2020, 2, 18)
+	start = end - datetime.timedelta(days = 1)
 	while start >= datetime.date(2020, 2, 1):
 		try:
 			loopPages(url,auth,params)
