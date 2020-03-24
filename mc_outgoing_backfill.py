@@ -31,7 +31,7 @@ params = {'company':'CO5945A0888A908151444FB59D3D3AC455',
           'page':1,
           'limit':1000,
           'start_time':update_from,
-          'end_time':update_to} )
+          'end_time':update_to}
                   
 ### API Call ###
 def getAPIdata(url,auth,params):
