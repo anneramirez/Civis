@@ -8,6 +8,7 @@ import os
 import datetime
 
 end = datetime.date(2020, 2, 18)
+global start
 start = end - datetime.timedelta(days = 1)
 
 update_from = str(start)+" 05:00:00 UTC"
