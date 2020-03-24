@@ -56,6 +56,8 @@ def flatXML(tree):
 
 def pushData(d):
     df = pd.DataFrame(d)
+	if not 'broadcast_id' in df.columns:
+		df['broadcast_id'] = float("NaN")
     client = civis.APIClient()
     civis.io.dataframe_to_civis(df, 'redshift-ppfa', staging_table, existing_table_rows='append', headers='true',max_errors=500)
     countd=len(df)
