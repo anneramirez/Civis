@@ -133,8 +133,10 @@ bro_count = int(bro_t[1][0])
 new_t = civis.io.read_civis_sql('select count(distinct id) from ' + broadcasts_table,'redshift-ppfa')
 new_count = int(new_t[1][0])
 
-if new_count >= bro_count:
-          break
-elif new_count < bro_count:
+if new_count < bro_count:
           civis.io.read_civis_sql('drop table ' + broadcasts_table,'redshift-ppfa')
+          civis.io.read_civis_sql('drop table ' + included_groups_table,'redshift-ppfa')
+          civis.io.read_civis_sql('drop table ' + excluded_groups_table,'redshift-ppfa')
           loopPages(url,auth,params)
+elif new_count >= bro_count:
+          print("Count check passed!")
