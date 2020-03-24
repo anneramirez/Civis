@@ -97,3 +97,4 @@ def loopMonth (url,auth,params):
 			break
 	print("Finished the month")
 
+loopMonth (url,auth,params)
