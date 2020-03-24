@@ -7,10 +7,11 @@ import pandas as pd
 import os
 import datetime
 
-today = datetime.date.today()
-yesterday = today - datetime.timedelta(days = 1)
-update_from = str(yesterday)+" 05:00:00 UTC"
-update_to = str(today)+" 04:59:59 UTC"
+end = datetime.datetime(2020, 2, 18)
+start = end - datetime.timedelta(days = 1)
+
+update_from = str(start)+" 05:00:00 UTC"
+update_to = str(end)+" 04:59:59 UTC"
 
 user = os.environ.get('MC_CREDENTIAL_USERNAME')
 pw = os.environ.get('MC_CREDENTIAL_PASSWORD')
@@ -24,15 +25,13 @@ print(endpoint, object_name, staging_table)
 
 ### VAR Global ###
 auth = HTTPBasicAuth(user,pw)
-url = "https://secure.mcommons.com/api/" + endpoint
+url = "https://secure.mcommons.com/api/sent_messages"
 
-params = {'company':company_key}
-
-if endpoint != 'groups':
-    params.update( {'page':1,
-                    'limit':1000,
-                    'start_time':update_from,
-                    'end_time':update_to} )
+params = {'company':'CO5945A0888A908151444FB59D3D3AC455',
+          'page':1,
+          'limit':1000,
+          'start_time':update_from,
+          'end_time':update_to} )
                   
 ### API Call ###
 def getAPIdata(url,auth,params):
@@ -85,5 +84,13 @@ def loopPages(url,auth,params):
     params['page'] = 1
     pushData(records)
 
-loopPages(url,auth,params)  
-print("Imported " + object_name)
+while start >= 2020-02-01:
+    try:
+        loopPages(url,auth,params)  
+        print("Imported outgoing from " + str(start))
+        end = start
+        start = end - datetime.timedelta(days = 1)
+        params.update( { 'start_time': str(start)+" 05:00:00 UTC",
+                      'end_time': str(end)+" 04:59:59 UTC" } )
+print("Finished the month")
+
