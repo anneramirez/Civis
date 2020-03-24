@@ -89,10 +89,10 @@ def loopMonth (url,auth,params):
 		try:
 			loopPages(url,auth,params)
 			print("Imported outgoing from " + str(start))
-       		end = start
-        	start = end - datetime.timedelta(days = 1)
-        	params.update({ 'start_time': str(start)+" 05:00:00 UTC",
-                      'end_time': str(end)+" 04:59:59 UTC" })
+			end = start
+			start = end - datetime.timedelta(days = 1)
+			params.update({ 'start_time': str(start)+" 05:00:00 UTC",
+                      			'end_time': str(end)+" 04:59:59 UTC" })
      	except:
         	break
 	print("Finished the month")
