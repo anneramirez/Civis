@@ -46,7 +46,6 @@ col_names = ['address_city', 'address_country', 'address_postal_code',
 ### API Call ###
 def getAPIdata(url,auth,params):
     resp = requests.get(url, auth=auth, params=params)
-    print("API call done: " + str(resp))
     return resp 
 
 def processXML(d):
