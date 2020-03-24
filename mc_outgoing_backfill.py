@@ -86,14 +86,17 @@ def loopPages(url,auth,params):
     pushData(records)
 
 def loopMonth (url,auth,params):
+	global end
+	global start
 	end = datetime.date(2020, 2, 18)
 	start = end - datetime.timedelta(days = 1)
 	while start >= datetime.date(2020, 2, 1):
 		try:
 			loopPages(url,auth,params)
 			print("Imported outgoing from " + str(start))
-			end = start
 			global start 
+			global end
+			end = start
 			start = end - datetime.timedelta(days = 1)
 			params.update({ 'start_time': str(start)+" 05:00:00 UTC",
                       			'end_time': str(end)+" 04:59:59 UTC" })
