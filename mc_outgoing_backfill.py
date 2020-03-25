@@ -69,6 +69,7 @@ obj = object_name
 def loopPages(url,auth,params): 
     startTime = datetime.datetime.now()
     records = []
+    pageCount = 1
     while params['page'] <= pageCount: #params['page'] < 3: #change to while True when done testing!!
         try:
             resp = getAPIdata(url,auth,params)
