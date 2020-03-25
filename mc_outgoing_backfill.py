@@ -66,23 +66,27 @@ def pushData(d):
 ### PROFILES Loop through pages to get all results ###
 obj = object_name
 def loopPages(url,auth,params): 
+    startTime = datetime.datetime.now()
     records = []
     while True: #params['page'] < 3: #change to while True when done testing!!
         try:
             resp = getAPIdata(url,auth,params)
-            tree = processXML(resp)
+            tree = xmltodict.parse(resp.content, attr_prefix='', cdata_key='value', dict_constructor=dict)
             path = tree['response'][obj+'s'][obj]
             r = flatXML(path)
             records.extend(r)
-            if endpoint == 'groups':
-                break
             if params['page']%100 == 0: #evaluate current page, if multiple of 100 (so 100k records) push to Civis and continue with an empty list
                 pushData(records)
                 records = []
+                timeElapsed = datetime.datetime.now()-startTime
+                print("Processed " + str(params['page']) + " pages in " + str(timeElapsed))
             params['page'] += 1 #go to next page
             #else:
              #   break
-        except:
+        except Exception as ex:
+            print("Exception raised in looppages on page " + str(params['page']))
+            print(ex)
+            print("Unexpected error:", sys.exc_info()[0])
             break
     params['page'] = 1
     pushData(records)
@@ -100,8 +104,11 @@ def loopMonth (url,auth,params):
 			start = end - datetime.timedelta(days = 1)
 			params.update({ 'start_time': str(start)+" 05:00:00 UTC",
                       			'end_time': str(end)+" 04:59:59 UTC" })
-		except:
-			break
+                except Exception as ex:
+                        print("Exception raised in looppages on page " + str(params['page']))
+                        print(ex)
+                        print("Unexpected error:", sys.exc_info()[0])
+                        break
 	print("Finished the month")
 
 loopMonth (url,auth,params)
