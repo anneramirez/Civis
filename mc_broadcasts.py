@@ -128,7 +128,8 @@ def loopPages(url,auth,params):
 
 loopPages(url,auth,params)
 
-bro_t = civis.io.read_civis_sql('select count(distinct broadcast_id) from mobile_commons.broadcasts','redshift-ppfa')
+old_broadcasts_table = broadcasts_table + '_backup'
+bro_t = civis.io.read_civis_sql('select count(distinct id) from ' + old_broadcasts_table,'redshift-ppfa')
 bro_count = int(bro_t[1][0])
 new_t = civis.io.read_civis_sql('select count(distinct id) from ' + broadcasts_table,'redshift-ppfa')
 new_count = int(new_t[1][0])
