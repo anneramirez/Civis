@@ -73,7 +73,7 @@ def loopPages(url,auth,params):
         try:
             resp = getAPIdata(url,auth,params)
             tree = xmltodict.parse(resp.content, attr_prefix='', cdata_key='value', dict_constructor=dict)
-	    pages = tree['response'][obj+'s']
+            pages = tree['response'][obj+'s']
             pageCount = int(pages.get('page_count'))
             path = tree['response'][obj+'s'][obj]
             r = flatXML(path)
