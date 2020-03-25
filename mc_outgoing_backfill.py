@@ -84,10 +84,10 @@ def loopPages(url,auth,params):
             #else:
              #   break
         except Exception as ex:
-            print("Exception raised in looppages on page " + str(params['page']))
-            print(ex)
-            print("Unexpected error:", sys.exc_info()[0])
-            break
+                print("Exception raised in looppages on page " + str(params['page']))
+                print(ex)
+                print("Unexpected error:", sys.exc_info()[0])
+                break
     params['page'] = 1
     pushData(records)
 
