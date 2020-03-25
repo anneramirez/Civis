@@ -6,6 +6,7 @@ from requests.auth import HTTPBasicAuth
 import pandas as pd
 import os
 import datetime
+import sys
 
 end = datetime.date(2020, 2, 18)
 global start
@@ -68,10 +69,12 @@ obj = object_name
 def loopPages(url,auth,params): 
     startTime = datetime.datetime.now()
     records = []
-    while True: #params['page'] < 3: #change to while True when done testing!!
+    while params['page'] <= pageCount: #params['page'] < 3: #change to while True when done testing!!
         try:
             resp = getAPIdata(url,auth,params)
             tree = xmltodict.parse(resp.content, attr_prefix='', cdata_key='value', dict_constructor=dict)
+	    pages = tree['response'][obj+'s']
+            pageCount = int(pages.get('page_count'))
             path = tree['response'][obj+'s'][obj]
             r = flatXML(path)
             records.extend(r)
