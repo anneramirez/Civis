@@ -35,6 +35,23 @@ params = {'company':'CO5945A0888A908151444FB59D3D3AC455',
           'start_time':update_from,
           'end_time':update_to}
                   
+col_names = ['body',
+'broadcast_id',
+'campaign_active',
+'campaign_id',
+'campaign_name',
+'id',
+'message_template_id',
+'mms',
+'multipart',
+'next_id_id',
+'phone_number',
+'previous_id_id',
+'profile',
+'sent_at',
+'status',
+'type']
+	
 ### API Call ###
 def getAPIdata(url,auth,params):
     resp = requests.get(url, auth=auth, params=params)
@@ -56,9 +73,7 @@ def flatXML(tree):
     return flat
 
 def pushData(d):
-	df = pd.DataFrame(d)
-	if not 'broadcast_id' in df.columns:
-		df['broadcast_id'] = float("NaN")
+	df = pd.DataFrame(d,columns=col_names)
 	client = civis.APIClient()
 	civis.io.dataframe_to_civis(df, 'redshift-ppfa', staging_table, existing_table_rows='append', headers='true',max_errors=500)
 	countd = len(df)
