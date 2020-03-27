@@ -85,7 +85,8 @@ def loopPages(url,auth,params):
     startTime = datetime.datetime.now()
     records = []
     pageCount = 1
-    while params['page'] <= pageCount: #params['page'] < 3: #change to while True when done testing!!
+    attempts = 0
+    while params['page'] <= pageCount and attempts < 5: #params['page'] < 3: #change to while True when done testing!!
         try:
             resp = getAPIdata(url,auth,params)
             tree = xmltodict.parse(resp.content, attr_prefix='', cdata_key='value', dict_constructor=dict)
@@ -103,10 +104,10 @@ def loopPages(url,auth,params):
             #else:
              #   break
         except Exception as ex:
-                print("Exception raised in looppages on page " + str(params['page']))
-                print(ex)
-                print("Unexpected error:", sys.exc_info()[0])
-                break
+            print("Unexpected error:", sys.exc_info()[0])
+            print(str(resp) + ' on page ' + str(params['page']))
+            print(resp.text)
+            attempts += 1
     params['page'] = 1
     pushData(records)
 
