@@ -8,7 +8,7 @@ import os
 import datetime
 import sys
 
-end = datetime.date(2020, 2, 14)
+end = datetime.date(2020, 2, 12)
 global start
 start = end - datetime.timedelta(days = 1)
 
@@ -114,7 +114,7 @@ def loopPages(url,auth,params):
 def loopMonth (url,auth,params):
 	global end
 	global start
-	end = datetime.date(2020, 2, 14)
+	end = datetime.date(2020, 2, 12)
 	start = end - datetime.timedelta(days = 1)
 	while start >= datetime.date(2020, 2, 10):
 		try:
