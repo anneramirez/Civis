@@ -7,6 +7,7 @@ import pandas as pd
 import os
 import datetime
 import sys
+import time
 
 end = datetime.date(2020, 2, 12)
 global start
@@ -107,6 +108,7 @@ def loopPages(url,auth,params):
             print("Unexpected error:", sys.exc_info()[0])
             print(str(resp) + ' on page ' + str(params['page']))
             print(resp.text)
+            time.sleep(30)
             attempts += 1
     params['page'] = 1
     pushData(records)
