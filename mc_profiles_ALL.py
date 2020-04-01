@@ -132,7 +132,7 @@ def loopPages(url,auth,params):
     recordsCus = []
     recordsSub = []
     attempts = 0
-    while True and attempts < 5: #change to while True when done testing!!
+    while attempts < 5: #change to while True when done testing!!
         try:
             resp = getAPIdata(url,auth,params)
             tree = processXML(resp)
@@ -157,7 +157,8 @@ def loopPages(url,auth,params):
                 print("Processed " + str(params['page']) + " pages in " + str(timeElapsed))
             params['page'] += 1 #go to next page   
         except Exception as ex:
-            countCheck()
+            if countCheck():
+                break
             print("Unexpected error:", sys.exc_info()[0])
             print(str(resp) + ' on page ' + str(params['page']))
             print(resp.text)
@@ -191,8 +192,5 @@ def countCheck():
           new_t = civis.io.read_civis_sql('select count(distinct id) from ' + profiles_table,'redshift-ppfa')
           new_count = int(new_t[1][0])
           if new_count >= pro_count:
-                    print("Count check passed!")
-                    break
-          else:
-                    continue
+                    return True
           
