@@ -163,7 +163,7 @@ def loopPages(url,auth,params):
             print("Unexpected error:", sys.exc_info()[0])
             print(str(resp) + ' on page ' + str(params['page']))
             print(resp.text)
-            time.sleep(30)
+            time.sleep(60)
             attempts += 1
     params['page'] = 1
     pushData(recordsPro,recordsCli,recordsCus,recordsSub)
