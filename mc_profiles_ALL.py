@@ -131,10 +131,14 @@ def loopPages(url,auth,params):
     recordsCli = []
     recordsCus = []
     recordsSub = []
-    while True: #change to while True when done testing!!
+    pageCount = 1
+    attempts = 0
+    while params['page'] <= pageCount and attempts < 5: #change to while True when done testing!!
         try:
             resp = getAPIdata(url,auth,params)
             tree = processXML(resp)
+            pages = tree['response'][obj+'s']
+            pageCount = int(pages.get('page_count'))
             path = tree['response'][obj+'s'][obj]
             clicks = process_sublist(path,'click')
             customs = process_sublist(path,'custom_column')
@@ -155,15 +159,28 @@ def loopPages(url,auth,params):
                 timeElapsed=datetime.datetime.now()-startTime
                 print("Processed " + str(params['page']) + " pages in " + str(timeElapsed))
             params['page'] += 1 #go to next page   
-
-            #else:
-             #   break
         except Exception as ex:
-            print("Exception raised in looppages on page " + str(params['page']))
-            print(ex)
             print("Unexpected error:", sys.exc_info()[0])
-            break
+            print(str(resp) + ' on page ' + str(params['page']))
+            print(resp.text)
+            time.sleep(30)
+            attempts += 1
     params['page'] = 1
     pushData(recordsPro,recordsCli,recordsCus,recordsSub)
 
 loopPages(url,auth,params)
+
+old_profiles_table = profiles_table + '_backup'
+pro_t = civis.io.read_civis_sql('select count(distinct id) from ' + old_profiles_table,'redshift-ppfa')
+pro_count = int(pro_t[1][0])
+new_t = civis.io.read_civis_sql('select count(distinct id) from ' + profiles_table,'redshift-ppfa')
+new_count = int(new_t[1][0])
+
+if new_count < pro_count:
+          civis.io.query_civis('drop table ' + profiles_table, 'redshift-ppfa')
+          civis.io.query_civis('drop table ' + clicks_table, 'redshift-ppfa')
+          civis.io.query_civis('drop table ' + customs_table, 'redshift-ppfa')
+          civis.io.query_civis('drop table ' + subscriptions_table, 'redshift-ppfa')
+          loopPages(url,auth,params)
+elif new_count >= pro_count:
+          print("Count check passed!")
