@@ -157,7 +157,7 @@ def loopPages(url,auth,params):
                 print("Processed " + str(params['page']) + " pages in " + str(timeElapsed))
             params['page'] += 1 #go to next page   
         except Exception as ex:
-			countCheck()
+            countCheck()
             print("Unexpected error:", sys.exc_info()[0])
             print(str(resp) + ' on page ' + str(params['page']))
             print(resp.text)
