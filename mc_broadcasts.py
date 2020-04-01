@@ -55,7 +55,7 @@ def pushData(dataBro, dataInc, dataExc):
     print(civis.io.read_civis_sql('select count(distinct id) from ' + broadcasts_table,'redshift-ppfa'))
     print(datetime.datetime.now())
     print(str(len(dfB)) + " broadcasts imported")
-    print(str(len(dfI)) + " inccluded groups imported")
+    print(str(len(dfI)) + " included groups imported")
     print(str(len(dfO)) + " excluded groups imported")
 
 def process_sublist(t,objs):       
