@@ -63,6 +63,16 @@ def flatXML(tree):
     flat = [flatten_dict(x) for x in tree]
     return flat
 
+##Count Check##
+def countCheck():
+          old_profiles_table = profiles_table + '_backup'
+          pro_t = civis.io.read_civis_sql('select count(distinct id) from ' + old_profiles_table,'redshift-ppfa')
+          pro_count = int(pro_t[1][0])
+          new_t = civis.io.read_civis_sql('select count(distinct id) from ' + profiles_table,'redshift-ppfa')
+          new_count = int(new_t[1][0])
+          if new_count >= pro_count:
+                    return True
+
 ###Push to Civis###
 def pushData(dataPro,dataCli,dataCus,dataSub):
     dfPro = pd.DataFrame(dataPro, columns=col_names)
@@ -169,28 +179,12 @@ def loopPages(url,auth,params):
 
 loopPages(url,auth,params)
 
-old_profiles_table = profiles_table + '_backup'
-pro_t = civis.io.read_civis_sql('select count(distinct id) from ' + old_profiles_table,'redshift-ppfa')
-pro_count = int(pro_t[1][0])
-new_t = civis.io.read_civis_sql('select count(distinct id) from ' + profiles_table,'redshift-ppfa')
-new_count = int(new_t[1][0])
-
-if new_count < pro_count:
+if countCheck():
+          print("Count check passed!")
+else:
           civis.io.query_civis('drop table ' + profiles_table, 'redshift-ppfa')
           civis.io.query_civis('drop table ' + clicks_table, 'redshift-ppfa')
           civis.io.query_civis('drop table ' + customs_table, 'redshift-ppfa')
           civis.io.query_civis('drop table ' + subscriptions_table, 'redshift-ppfa')
           loopPages(url,auth,params)
-elif new_count >= pro_count:
-          print("Count check passed!")
-
-##Count Check##
-def countCheck():
-          old_profiles_table = profiles_table + '_backup'
-          pro_t = civis.io.read_civis_sql('select count(distinct id) from ' + old_profiles_table,'redshift-ppfa')
-          pro_count = int(pro_t[1][0])
-          new_t = civis.io.read_civis_sql('select count(distinct id) from ' + profiles_table,'redshift-ppfa')
-          new_count = int(new_t[1][0])
-          if new_count >= pro_count:
-                    return True
           
