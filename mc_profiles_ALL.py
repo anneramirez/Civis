@@ -177,7 +177,7 @@ def loopPages(url,auth,params):
 				break
 			print("Unexpected error:", sys.exc_info()[0])
 			print(str(resp) + ' on page ' + str(params['page']))
-			print(resp.text)
+			print(resp.text[:200])
 			time.sleep(60)
 			attempts += 1
 	params['page'] = 1
