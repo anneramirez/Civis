@@ -7,6 +7,7 @@ import pandas as pd
 import os
 import datetime
 import sys
+import time
 
 user = os.environ.get('MC_CREDENTIAL_USERNAME')
 pw = os.environ.get('MC_CREDENTIAL_PASSWORD')
