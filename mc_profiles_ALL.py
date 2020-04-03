@@ -87,7 +87,7 @@ def pushData(dataPro,dataCli,dataCus,dataSub):
     civis.io.dataframe_to_civis(dfCli, 'redshift-ppfa', clicks_table, existing_table_rows='append', headers='true',max_errors=500)
     civis.io.dataframe_to_civis(dfCus, 'redshift-ppfa', customs_table, existing_table_rows='append',headers='true', max_errors=500)
     civis.io.dataframe_to_civis(dfSub, 'redshift-ppfa', subscriptions_table, existing_table_rows='append',headers='true', max_errors=500)
-    print(civis.io.read_civis_sql('select count(id) from ' + profiles_table,'redshift-ppfa'))
+    print(civis.io.read_civis_sql('select count(distinct id) from ' + profiles_table,'redshift-ppfa'))
     countP=len(dfPro)
     countCl=len(dfCli)
     countCu=len(dfCus)
@@ -142,39 +142,44 @@ def loopPages(url,auth,params):
     recordsCli = []
     recordsCus = []
     recordsSub = []
+    num = 1
     attempts = 0
     while attempts < 5: #change to while True when done testing!!
-        try:
-            resp = getAPIdata(url,auth,params)
-            tree = processXML(resp)
-            path = tree['response'][obj+'s'][obj]
-            clicks = process_sublist(path,'click')
-            customs = process_sublist(path,'custom_column')
-            subscriptions = process_sublist(path,'subscription')
-            recordsCli.extend(clicks)
-            recordsCus.extend(customs)
-            recordsSub.extend(subscriptions)
-            clean = cleanPro(path)
-            r = flatXML(clean)
-            recordsPro.extend(r) 
-            if params['page']%25 == 0: #evaluate current page
-                pushData(recordsPro,recordsCli,recordsCus,recordsSub)
-                recordsPro = []
-                recordsCli = []
-                recordsCus = []
-                recordsSub = []
-            if params['page']%100 == 0:
-                timeElapsed=datetime.datetime.now()-startTime
-                print("Processed " + str(params['page']) + " pages in " + str(timeElapsed))
-            params['page'] += 1 #go to next page   
-        except Exception as ex:
-            if countCheck():
-                break
-            print("Unexpected error:", sys.exc_info()[0])
-            print(str(resp) + ' on page ' + str(params['page']))
-            print(resp.text)
-            time.sleep(60)
-            attempts += 1
+		try:
+			resp = getAPIdata(url,auth,params)
+			tree = processXML(resp)
+			n = tree['response'][obj+'s']
+			num = int(n.get('num'))	
+			path = tree['response'][obj+'s'][obj]
+			clicks = process_sublist(path,'click')
+			customs = process_sublist(path,'custom_column')
+			subscriptions = process_sublist(path,'subscription')
+			recordsCli.extend(clicks)
+			recordsCus.extend(customs)
+			recordsSub.extend(subscriptions)
+			clean = cleanPro(path)
+			r = flatXML(clean)
+			recordsPro.extend(r) 
+			if params['page']%25 == 0: #evaluate current page
+				pushData(recordsPro,recordsCli,recordsCus,recordsSub)
+				recordsPro = []
+				recordsCli = []
+				recordsCus = []
+				recordsSub = []
+			if params['page']%100 == 0:
+				timeElapsed=datetime.datetime.now()-startTime
+			print("Processed " + str(params['page']) + " pages in " + str(timeElapsed))
+			params['page'] += 1 #go to next page  
+		except Exception as ex:
+			if num == 0:
+				pushData(recordsPro,recordsCli,recordsCus,recordsSub)
+			if countCheck():
+				break
+			print("Unexpected error:", sys.exc_info()[0])
+			print(str(resp) + ' on page ' + str(params['page']))
+			print(resp.text)
+			time.sleep(60)
+			attempts += 1
     params['page'] = 1
     pushData(recordsPro,recordsCli,recordsCus,recordsSub)
 
