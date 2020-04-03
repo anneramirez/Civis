@@ -46,105 +46,105 @@ col_names = ['address_city', 'address_country', 'address_postal_code',
 
 ### API Call ###
 def getAPIdata(url,auth,params):
-    resp = requests.get(url, auth=auth, params=params)
-    return resp 
+	resp = requests.get(url, auth=auth, params=params)
+	return resp 
 
 def processXML(d):
-    tree = xmltodict.parse(d.content, attr_prefix='', cdata_key='value', dict_constructor=dict)
-    return tree
+	tree = xmltodict.parse(d.content, attr_prefix='', cdata_key='value', dict_constructor=dict)
+	return tree
 
 ###Flatten###
 def flatten_dict(d, separator='_', prefix=''):
-    return { prefix + separator + k if prefix else k : v
-            for k, v in d.items()
-            for k, v in flatten_dict(v, separator, k).items()
-            } if isinstance(d, dict) else { prefix : d }
+	return { prefix + separator + k if prefix else k : v
+		for k, v in d.items()
+		for k, v in flatten_dict(v, separator, k).items()
+		} if isinstance(d, dict) else { prefix : d }
             
 def flatXML(tree):
-    flat = [flatten_dict(x) for x in tree]
-    return flat
+	flat = [flatten_dict(x) for x in tree]
+	return flat
 
 ##Count Check##
 def countCheck():
-          old_profiles_table = profiles_table + '_backup'
-          pro_t = civis.io.read_civis_sql('select count(distinct id) from ' + old_profiles_table,'redshift-ppfa')
-          pro_count = int(pro_t[1][0])
-          new_t = civis.io.read_civis_sql('select count(distinct id) from ' + profiles_table,'redshift-ppfa')
-          new_count = int(new_t[1][0])
-          if new_count >= pro_count:
-                    return True
+	old_profiles_table = profiles_table + '_backup'
+	pro_t = civis.io.read_civis_sql('select count(distinct id) from ' + old_profiles_table,'redshift-ppfa')
+	pro_count = int(pro_t[1][0])
+	new_t = civis.io.read_civis_sql('select count(distinct id) from ' + profiles_table,'redshift-ppfa')
+	new_count = int(new_t[1][0])
+	if new_count >= pro_count:
+		return True
 
 ###Push to Civis###
 def pushData(dataPro,dataCli,dataCus,dataSub):
-    dfPro = pd.DataFrame(dataPro, columns=col_names)
-    dfCli = pd.DataFrame(dataCli)
-    dfCus = pd.DataFrame(dataCus)
-    dfSub = pd.DataFrame(dataSub)
-    dfPro = dfPro.drop(columns='source_email',errors='ignore')
-    dfPro['page'] = str(params['page'])
-    client = civis.APIClient()
-    civis.io.dataframe_to_civis(dfPro, 'redshift-ppfa', profiles_table, existing_table_rows='append', headers='true',max_errors=500)
-    civis.io.dataframe_to_civis(dfCli, 'redshift-ppfa', clicks_table, existing_table_rows='append', headers='true',max_errors=500)
-    civis.io.dataframe_to_civis(dfCus, 'redshift-ppfa', customs_table, existing_table_rows='append',headers='true', max_errors=500)
-    civis.io.dataframe_to_civis(dfSub, 'redshift-ppfa', subscriptions_table, existing_table_rows='append',headers='true', max_errors=500)
-    print(civis.io.read_civis_sql('select count(distinct id) from ' + profiles_table,'redshift-ppfa'))
-    countP=len(dfPro)
-    countCl=len(dfCli)
-    countCu=len(dfCus)
-    countS=len(dfSub)
-    print(datetime.datetime.now())
-    print(str(countP) + " profiles imported")
-    print(str(countCl) + " clicks imported")
-    print(str(countCu) + " custom fields imported")
-    print(str(countS) + " subscriptions imported")
+	dfPro = pd.DataFrame(dataPro, columns=col_names)
+	dfCli = pd.DataFrame(dataCli)
+	dfCus = pd.DataFrame(dataCus)
+	dfSub = pd.DataFrame(dataSub)
+	dfPro = dfPro.drop(columns='source_email',errors='ignore')
+	dfPro['page'] = str(params['page'])
+	client = civis.APIClient()
+	civis.io.dataframe_to_civis(dfPro, 'redshift-ppfa', profiles_table, existing_table_rows='append', headers='true',max_errors=500)
+	civis.io.dataframe_to_civis(dfCli, 'redshift-ppfa', clicks_table, existing_table_rows='append', headers='true',max_errors=500)
+	civis.io.dataframe_to_civis(dfCus, 'redshift-ppfa', customs_table, existing_table_rows='append',headers='true', max_errors=500)
+	civis.io.dataframe_to_civis(dfSub, 'redshift-ppfa', subscriptions_table, existing_table_rows='append',headers='true', max_errors=500)
+	print(civis.io.read_civis_sql('select count(distinct id) from ' + profiles_table,'redshift-ppfa'))
+	countP=len(dfPro)
+	countCl=len(dfCli)
+	countCu=len(dfCus)
+	countS=len(dfSub)
+	print(datetime.datetime.now())
+	print(str(countP) + " profiles imported")
+	print(str(countCl) + " clicks imported")
+	print(str(countCu) + " custom fields imported")
+	print(str(countS) + " subscriptions imported")
 
 
-def process_sublist(t,obj):       
-    subs = []
-    single = {}
-    for p in t:
-        for k,v in p.items():
-            if k =='id':
-                try:
-                    path = p[obj+'s'][obj]
-                    if isinstance(path, dict): #this is single clicks
-                        single.update({'profile_id':v})
-                        for a,b in path.items():
-                            single.update({a:b})
-                        subs.append(single) 
-                        single = {}
-                    elif isinstance(path, list):
-                        for s in path:
-                            single.update({'profile_id':v})
-                            for a,b in s.items():
-                                single.update({a:b})
-                            subs.append(single) 
-                            single = {}
-                except Exception as ex:
-                    continue                 
-    return subs
+def process_sublist(t,obj):    
+	subs = []
+	single = {}
+	for p in t:
+		for k,v in p.items():
+			if k =='id':
+				try:
+					path = p[obj+'s'][obj]
+					if isinstance(path, dict): #this is single clicks
+						single.update({'profile_id':v})
+						for a,b in path.items():
+							single.update({a:b})
+						subs.append(single)
+						single = {}
+					elif isinstance(path, list):
+						for s in path:
+							single.update({'profile_id':v})
+							for a,b in s.items():
+								single.update({a:b})
+							subs.append(single) 
+							single = {}
+				except Exception as ex:
+					continue
+	return subs
 
 def cleanPro(path):
-    for p in path:
-      try:
-        del(p['clicks'])
-        del(p['custom_columns'])
-        del(p['subscriptions'])
-      except Exception as ex:
-        continue
-    return path
+	for p in path:
+		try:
+			del(p['clicks'])
+			del(p['custom_columns'])
+			del(p['subscriptions'])
+		except Exception as ex:
+			continue
+	return path
   
 ### PROFILES Loop through pages to get all results ###
 obj = 'profile'
 def loopPages(url,auth,params): 
-    startTime= datetime.datetime.now()
-    recordsPro = []
-    recordsCli = []
-    recordsCus = []
-    recordsSub = []
-    num = 1
-    attempts = 0
-    while attempts < 5: #change to while True when done testing!!
+	startTime= datetime.datetime.now()
+	recordsPro = []
+	recordsCli = []
+	recordsCus = []
+	recordsSub = []
+	num = 1
+	attempts = 0
+	while attempts < 5: #change to while True when done testing!!
 		try:
 			resp = getAPIdata(url,auth,params)
 			tree = processXML(resp)
@@ -180,17 +180,16 @@ def loopPages(url,auth,params):
 			print(resp.text)
 			time.sleep(60)
 			attempts += 1
-    params['page'] = 1
-    pushData(recordsPro,recordsCli,recordsCus,recordsSub)
+	params['page'] = 1
+	pushData(recordsPro,recordsCli,recordsCus,recordsSub)
 
 loopPages(url,auth,params)
 
 if countCheck():
-          print("Count check passed!")
+	print("Count check passed!")
 else:
-          civis.io.query_civis('drop table ' + profiles_table, 'redshift-ppfa')
-          civis.io.query_civis('drop table ' + clicks_table, 'redshift-ppfa')
-          civis.io.query_civis('drop table ' + customs_table, 'redshift-ppfa')
-          civis.io.query_civis('drop table ' + subscriptions_table, 'redshift-ppfa')
-          loopPages(url,auth,params)
-          
+	civis.io.query_civis('drop table ' + profiles_table, 'redshift-ppfa')
+	civis.io.query_civis('drop table ' + clicks_table, 'redshift-ppfa')
+	civis.io.query_civis('drop table ' + customs_table, 'redshift-ppfa')
+	civis.io.query_civis('drop table ' + subscriptions_table, 'redshift-ppfa')
+	loopPages(url,auth,params)
