@@ -168,7 +168,7 @@ def loopPages(url,auth,params):
 				recordsSub = []
 			if params['page']%100 == 0:
 				timeElapsed=datetime.datetime.now()-startTime
-			print("Processed " + str(params['page']) + " pages in " + str(timeElapsed))
+				print("Processed " + str(params['page']) + " pages in " + str(timeElapsed))
 			params['page'] += 1 #go to next page  
 		except Exception as ex:
 			if num == 0:
