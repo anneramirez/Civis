@@ -3,7 +3,7 @@ create temp table giftfile_update (like anneramirez.ea_sf_giftfile);
 insert into giftfile_update
 SELECT
 	/* join to contacts piece */
-	cont.vanid
+	distinct cont.vanid
 	,
 	/* does not go to SF */
 	comm.committeename
@@ -102,7 +102,8 @@ CONVERT_TIMEZONE('US/Eastern', getdate()) AS insertdate
 (case when cont.financialprogramid IN (1,83,143,145) then
  (case when cont.onlineformname iLIKE '%\\_DIRECTED\\_%' OR right(cont.marketsource, 1) = 'D' OR cont.affiliatepercentage in ('100.00','90.00','0.00') then cont.affiliateid 
  when right(cont.marketsource, 1) <> 'D' then
- (case when coalesce(cont.affiliateid, ccf.affiliatecode) is not null then coalesce(cont.affiliateid, '0'||left(ccf.affiliatecode,5))
+ (case when cont.affiliateid is not null and len(cont.affiliateid)=6 then cont.affiliateid
+  when ccf.affiliatecode is not null then '0'||left(ccf.affiliatecode,5)
  else '999999' end) 
  else null end)
 else null end) as affiliateid
