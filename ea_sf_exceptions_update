@@ -12,23 +12,23 @@ cont.*,
  when cont.creditaccount IS NULL then 'creditaccount'
  when (cont.paymenttypename is null OR cont.paymenttypename not in ('Visa','Discover','American Express','MasterCard','PayPal','Apple Pay')) then 'paymenttype'
  when cont.filetype = 'ppfa.ea_C3_PPFA_' and cont.affiliateid IS NULL then 'affiliateid'
- when (datepart(day,CONVERT_TIMEZONE('US/Eastern', getdate())) > 15 AND (date_part(month, cont.datereceived) = datepart(month, ADD_MONTHS(CONVERT_TIMEZONE('US/Eastern', getdate()), -1)))) then 'lastmonth'
+ when (datepart(day,CONVERT_TIMEZONE('US/Eastern', getdate())) > 15 AND DATEDIFF(month, cont.datereceived,CONVERT_TIMEZONE('US/Eastern', getdate()))=1) then 'lastmonth'
  when (date_part(month, cont.datereceived) not in (datepart(month, CONVERT_TIMEZONE('US/Eastern', getdate())), datepart(month, ADD_MONTHS(CONVERT_TIMEZONE('US/Eastern', getdate()), -1)))) then 'closedmonth'
  else null end) as exception_reason
 from anneramirez.ea_sf_giftfile cont
 left join anneramirez.ea_sf_donorfile donor using (vanid)
-	where ((cont.marketsource IS NULL or len(cont.marketsource)<>14)
+
+where ((cont.marketsource IS NULL or len(cont.marketsource)<>14)
 	or (cont.filetype = 'ppfa.ea_C3_PPFA_' AND cont.affiliateid IS NULL)
 	or (cont.creditaccount IS NULL)
 	or (date_part(month, cont.datereceived) not in (datepart(month, CONVERT_TIMEZONE('US/Eastern', getdate())), datepart(month, ADD_MONTHS(CONVERT_TIMEZONE('US/Eastern', getdate()), -1))))
-  or ((date_part(month, cont.datereceived) = datepart(month, ADD_MONTHS(CONVERT_TIMEZONE('US/Eastern', getdate()), -1)))
-			and datepart(day,CONVERT_TIMEZONE('US/Eastern', getdate())) > 15)
+  or (datepart(day,CONVERT_TIMEZONE('US/Eastern', getdate())) > 15 AND DATEDIFF(month, cont.datereceived,CONVERT_TIMEZONE('US/Eastern', getdate()))=1)
 	or (cont.contactscontributionid in (select cca.contactscontributionid from vansync.ppfa_contactscontributionsadjustments_mym cca
 			inner join vansync.ppfa_contactscontributions_mym cc using (contactscontributionid)
 			where cc.datereceived::date=cca.dateadjusted::date
 			and cc.amount - cca.adjustmentamount = 0))
   or (cont.paymenttypename not in ('Visa','Discover','American Express','MasterCard','PayPal','Apple Pay'))
-  or (donor.email like 'ellen.freytag%' or donor.email like 'jamoya.jones%' or donor.email like 'aimee.martin%' or donor.email like 'molly.crosby%' or donor.email like 'anne.ramirez%')
+  or (donor.email like 'ellen.freytag%' or donor.email like 'jamoya.jones%' or donor.email like 'aimee.martin%' or donor.email like 'molly.crosby%' or donor.email like 'anne.ramirez%'))
 and cont.contactscontributionid not in (select batch_upload_sequence_number from anneramirez.ea_sf_file_master);
 
 begin transaction;
