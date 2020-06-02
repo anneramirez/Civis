@@ -1,0 +1,61 @@
+--we maybe just want new phones added yesterday? the SQs throw the date range off
+
+SELECT 
+distinct phone.phone as phone_number,
+email.email as email,
+c.firstname as first_name,
+c.lastname as last_name,
+addr.addressline1 as street1,
+addr.addressline2 as street2,
+addr.city as city,
+coalesce(addr.state,addr.provincename) as state,
+coalesce(addr.zip5,addr.postalcode) as postal_code,
+addr.countrycode as country,
+(case when c.vanid in (select distinct vanid from vansync.ppfa_contactsactivistcodes_mym where activistcodeid = 4475017) then 281258
+ when c.vanid in (select distinct vanid from vansync.ppfa_contactsactivistcodes_mym where activistcodeid = 4132411) then 81201 
+ else 290560 end) as opt_in_path_id,
+c.vanid as "VAN ID",
+(case when c.vanid in (select distinct vanid from vansync.ppfa_contactsactivistcodes_mym where activistcodeid = 4132411) then 'Yes' else null end) as "C4 Opt-In",
+ 
+/* for QA */
+phone.datecreated,
+phone.responsedate
+
+
+
+FROM 
+/*Start by pulling new cell opt-ins*/
+(select distinct * from
+(select 
+ distinct p.phone,
+ p.vanid,
+ cp.contactsphoneid,
+ cp.datecreated,
+ csr.responsedate,
+row_number () over (partition by phone order by p.datecreated asc, p.contactsphoneid asc) as rownum 
+ 
+ from vansync.ppfa_contactsphones_mym p
+ 
+--phone level opt-in capture 
+LEFT JOIN (select distinct contactsphoneid, max(datecreated) as datecreated from vansync.ppfa_contactsphonescommitteesoptins_mym where phoneoptinstatusid=1 group by contactsphoneid) cp using (contactsphoneid)
+ 
+--survey question opt-in capture
+ left JOIN 
+ (select distinct vanid, coalesce(datecanvassed,datecreated) as responsedate from
+ (select *, row_number () over (partition by vanid order by coalesce(datecanvassed,datecreated) desc) as rownum from vansync.ppfa_contactssurveyresponses_mym where surveyquestionid IN (165743,165741)) where rownum=1 and surveyresponseid in (703344,703339)) csr using (vanid)
+ 
+where p.datesuppressed is null --not deleted
+ and (p.phonetypeid='C' or p.iscellstatusid in (1,2)) --cells or likely cells
+ --and p.vanid not in (select distinct vanid from csr where surveyresponseid in (703340,703345))
+) where rownum=1) phone
+
+ --contact info
+left join (select * from vansync.ppfa_contacts_mym_cont where personcommitteeid=11607) c on c.vanid=phone.vanid
+--address
+LEFT JOIN (select * from (select *, row_number () over (partition by vanid order by datecreated desc,contactsaddressid desc) as rownum from vansync.ppfa_contactsaddresses_mym where datesuppressed is null) where rownum=1) addr
+  ON addr.vanid = c.vanid
+--email
+LEFT JOIN (SELECT * FROM (SELECT *, row_number () OVER (PARTITION BY vanid ORDER BY preferredemail desc, datecreated desc, contactsemailid desc) as rownum FROM vansync.ppfa_contactsemails_mym where datesuppressed is null) WHERE rownum=1) email
+  ON email.contactsemailid = c.emailid
+where (phone.datecreated::date=current_date-1 OR phone.responsedate::date=current_date-1) --added yesterday
+and phone.responsedate>=phone.datecreated
