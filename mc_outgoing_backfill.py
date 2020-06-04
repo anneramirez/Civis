@@ -9,7 +9,7 @@ import datetime
 import sys
 import time
 
-end = datetime.date(2020, 6, 3)
+end = datetime.date(2020, 5, 22)
 global start
 start = end - datetime.timedelta(days = 1)
 
@@ -116,9 +116,9 @@ def loopPages(url,auth,params):
 def loopMonth (url,auth,params):
 	global end
 	global start
-	end = datetime.date(2020, 6, 3)
+	end = datetime.date(2020, 5, 22)
 	start = end - datetime.timedelta(days = 1)
-	while start >= datetime.date(2020, 6, 2):
+	while start >= datetime.date(2020, 5, 21):
 		try:
 			loopPages(url,auth,params)
 			print("Imported outgoing from " + str(start))
